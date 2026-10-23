@@ -138,6 +138,24 @@ h1, h2, h3, .sectionTitle, .pageTitle, .itemName {
     height: 96px !important;
 }
 
+/* Header: drop the SyncPlay (group) and cast buttons. */
+.headerSyncButton,
+.headerCastButton { display: none !important; }
+
+/* Profile photo, when the user has uploaded one (jellyfin-web swaps it in). */
+.headerUserButtonRound div {
+    /* jellyfin-web nests the photo in an icon button; drop its padding so the avatar
+       matches the other header icons. */
+    padding: 0 !important;
+    margin: 0 !important;
+    transform: none !important; /* jellyfin-web scales icon-button children by 1.8 */
+    width: 1.9rem;
+    height: 1.9rem;
+    background-size: cover;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
 /* ------------------------------------------------------- side navigation */
 
 .mainDrawer {
@@ -340,6 +358,8 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
 
 /* Server sections other than Continue Watching and Recently Added stay hidden. */
 .homePage .homeSectionsContainer > [data-arc-section="other"] { display: none !important; }
+/* Rows paint above the hero they overlap. */
+.homePage .homeSectionsContainer > [data-arc-section] { position: relative; z-index: 1; }
 
 .homePage .sectionTitle,
 .homePage .sectionTitle-cards {
@@ -378,7 +398,8 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
 .arcHero {
     position: relative;
     height: clamp(460px, 74vh, 860px);
-    margin-bottom: 1.2em;
+    /* Continue Watching slides up over the hero's faded bottom (Apple TV style). */
+    margin-bottom: calc(-1 * clamp(70px, 12vh, 150px));
     overflow: hidden;
     background: var(--arc-bg);
     isolation: isolate;
@@ -404,7 +425,7 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
     z-index: 3;
     pointer-events: none;
     background:
-        linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.4) 38%, rgba(0, 0, 0, 0) 64%),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.86) 0%, rgba(0, 0, 0, 0.55) 40%, rgba(0, 0, 0, 0) 68%),
         linear-gradient(0deg, var(--arc-bg) 0%, rgba(0, 0, 0, 0.55) 22%, rgba(0, 0, 0, 0) 52%);
 }
 .arcHero-content,
@@ -417,41 +438,42 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
     z-index: 4;
     transition: opacity 0.22s var(--arc-ease);
     left: 3.3vw;
-    bottom: clamp(56px, 11vh, 120px);
-    width: min(560px, 44vw);
+    bottom: clamp(130px, 23vh, 260px);
+    width: min(640px, 46vw);
     color: var(--arc-text);
+    text-shadow: 0 1px 14px rgba(0, 0, 0, 0.55);
 }
 .arcHero-content.is-swapping { opacity: 0; }
 .arcHero-eyebrow {
-    font-size: 0.8rem;
-    font-weight: 600;
+    font-size: 0.9rem;
+    font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--arc-text-2);
+    color: rgba(245, 245, 247, 0.8);
     margin: 0 0 0.8em;
 }
 .arcHero-logo {
     display: block;
     max-width: 100%;
-    max-height: 140px;
+    max-height: 160px;
     margin-bottom: 0.8em;
     object-fit: contain;
     object-position: left bottom;
     filter: drop-shadow(0 4px 24px rgba(0, 0, 0, 0.5));
 }
 .arcHero-title {
-    font: 700 clamp(2.2rem, 4vw, 3.8rem)/1.02 var(--arc-font);
+    font: 700 clamp(2.6rem, 4.6vw, 4.4rem)/1.02 var(--arc-font);
     letter-spacing: -0.04em;
     margin: 0 0 0.25em;
 }
-.arcHero-meta { color: var(--arc-text-2); font-size: 0.95rem; margin: 0 0 0.8em; }
+.arcHero-meta { color: rgba(245, 245, 247, 0.88); font-size: 1.12rem; font-weight: 500; margin: 0 0 0.8em; }
 .arcHero-progress {
     display: flex;
     align-items: center;
     gap: 0.7em;
     margin: -0.2em 0 1em;
-    color: var(--arc-text-2);
-    font-size: 0.85rem;
+    color: rgba(245, 245, 247, 0.85);
+    font-size: 0.98rem;
 }
 .arcHero-progressBar {
     width: 140px;
@@ -462,10 +484,10 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
 }
 .arcHero-progressBar > div { height: 100%; background: var(--arc-text); }
 .arcHero-overview {
-    color: var(--arc-text-2);
-    font-size: 1rem;
-    line-height: 1.45;
-    margin: 0 0 1.5em;
+    color: rgba(245, 245, 247, 0.85);
+    font-size: 1.18rem;
+    line-height: 1.5;
+    margin: 0 0 1.6em;
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
@@ -478,8 +500,9 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
     gap: 0.45em;
     border: 0;
     border-radius: var(--arc-radius);
-    padding: 0.82em 1.6em;
-    font: 600 1rem/1 var(--arc-font);
+    padding: 0.85em 1.7em;
+    font: 600 1.08rem/1 var(--arc-font);
+    text-shadow: none;
     letter-spacing: -0.01em;
     cursor: pointer;
     transition: transform 0.12s var(--arc-ease), background-color 0.2s var(--arc-ease);
@@ -499,7 +522,7 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
     position: absolute;
     z-index: 4;
     right: 3.3vw;
-    bottom: clamp(60px, 11.5vh, 124px);
+    bottom: clamp(134px, 23.5vh, 264px);
     display: flex;
     gap: 7px;
 }
