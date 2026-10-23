@@ -332,17 +332,51 @@
             hero.appendChild(dots);
         }
 
+        // Preload title logos so a slide change never shows an empty logo slot.
+        for (const slide of slides) {
+            const logo = artwork(apiClient, slide.item).logo;
+            if (logo) new Image().src = logo;
+        }
+
+        const SWAP_MS = 220;
+        const LEAVE_MS = 1200; // a little longer than the slide fade in arc-theme.css
         let current = 0;
-        const show = (index) => {
-            current = (index + slides.length) % slides.length;
-            hero.querySelectorAll('.arcHero-slide').forEach((el, i) => el.classList.toggle('is-active', i === current));
+        let leaveTimer = null;
+        let swapTimer = null;
+
+        // Cross-fade without a dip: the outgoing slide stays fully opaque underneath
+        // (.is-leaving) while the incoming one fades in on top, then drops away. Fading
+        // both at once leaves each half transparent mid-way and the black behind shows
+        // through, which reads as a flicker.
+        const show = (index, manual = false) => {
+            const next = (index + slides.length) % slides.length;
+            if (next === current) return;
+            const slideEls = hero.querySelectorAll('.arcHero-slide');
+            const previous = slideEls[current];
+            slideEls.forEach((el) => el.classList.remove('is-leaving'));
+            previous.classList.add('is-leaving');
+            previous.classList.remove('is-active');
+            slideEls[next].classList.add('is-active');
+            clearTimeout(leaveTimer);
+            leaveTimer = setTimeout(() => previous.classList.remove('is-leaving'), LEAVE_MS);
+
+            current = next;
             hero.querySelectorAll('.arcHero-dot').forEach((el, i) => el.classList.toggle('is-active', i === current));
-            content.innerHTML = contentHtml(apiClient, slides[current]);
+
+            // Fade the text out, swap it, fade it back in.
+            content.classList.add('is-swapping');
+            clearTimeout(swapTimer);
+            swapTimer = setTimeout(() => {
+                content.innerHTML = contentHtml(apiClient, slides[current]);
+                content.classList.remove('is-swapping');
+            }, SWAP_MS);
+
+            if (manual) start(); // a picked slide gets its full time on screen
         };
 
         hero.addEventListener('click', (e) => {
             const dot = e.target.closest('.arcHero-dot');
-            if (dot) show([...dot.parentNode.children].indexOf(dot));
+            if (dot) show([...dot.parentNode.children].indexOf(dot), true);
         });
 
         const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
