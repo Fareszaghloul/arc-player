@@ -72,10 +72,16 @@ Name: "{autodesktop}\Arc"; Filename: "{app}\{#MyAppExeName}"; Comment: "Arc medi
 Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /passive /norestart"; StatusMsg: "Installing Visual C++ Redistributable..."; Flags: waituntilterminated; Check: ShouldInstallVCRedist
 ; Launch app after install
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch Arc"; Flags: nowait postinstall skipifsilent
-; Relaunch after an in-app update, which runs this installer with /SILENT
-Filename: "{app}\{#MyAppExeName}"; Flags: nowait; Check: WizardSilent
+; Relaunch after an in-app update, which runs this installer with /SILENT. When Arc
+; installs a pending update while closing it passes /NoRelaunch=1 so it stays closed.
+Filename: "{app}\{#MyAppExeName}"; Flags: nowait; Check: ShouldRelaunch
 
 [Code]
+function ShouldRelaunch: Boolean;
+begin
+  Result := WizardSilent and (ExpandConstant('{param:NoRelaunch|0}') = '0');
+end;
+
 var
   RemoveUserData: Boolean;
   VCRedistNeeded: Boolean;

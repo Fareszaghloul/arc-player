@@ -129,6 +129,12 @@
         "default": true
       },
       {
+        "value": "autoUpdate",
+        "display_name": "Install Updates Automatically",
+        "help": "Downloads new versions of Arc in the background and installs them, restarting Arc when nothing is playing. Turn off to be asked first.",
+        "default": true
+      },
+      {
         "value": "updateFeedUrl",
         "default": "",
         "hidden": true

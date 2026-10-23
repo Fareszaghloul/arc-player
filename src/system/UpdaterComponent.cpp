@@ -17,11 +17,13 @@
 #include <QVersionNumber>
 
 #include "Version.h"
+#include "player/PlayerComponent.h"
 #include "settings/SettingsComponent.h"
 #include "system/SystemComponent.h"
 
 static const int FEED_TIMEOUT_MS = 15000;
 static const int DOWNLOAD_STALL_TIMEOUT_MS = 60000;
+static const int STARTUP_CHECK_DELAY_MS = 4000;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 UpdaterComponent::UpdaterComponent(QObject* parent)
@@ -29,6 +31,32 @@ UpdaterComponent::UpdaterComponent(QObject* parent)
     m_network(new QNetworkAccessManager(this)),
     m_hash(QCryptographicHash::Sha256)
 {
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void UpdaterComponent::componentPostInitialize()
+{
+  // Track whether media is loaded so an automatic update never restarts Arc mid-film.
+  connect(&PlayerComponent::Get(), &PlayerComponent::stateChanged, this,
+          [this](PlayerComponent::State state, PlayerComponent::State)
+  {
+    m_mediaActive = state == PlayerComponent::State::playing ||
+                    state == PlayerComponent::State::paused ||
+                    state == PlayerComponent::State::buffering;
+    if (!m_mediaActive && m_phase == "waiting")
+    {
+      qInfo() << "Updater: playback ended, installing the downloaded update";
+      launchInstaller(true);
+    }
+  });
+
+  connect(qApp, &QCoreApplication::aboutToQuit, this, &UpdaterComponent::onAboutToQuit);
+
+#ifndef DISABLE_UPDATE_CHECK
+  // Check on every launch, independent of which page is showing.
+  if (SettingsComponent::Get().value(SETTINGS_SECTION_MAIN, "checkForUpdates").toBool())
+    QTimer::singleShot(STARTUP_CHECK_DELAY_MS, this, [this]() { check(false); });
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -44,6 +72,26 @@ QString UpdaterComponent::feedUrl() const
   if (!overrideUrl.isEmpty())
     return overrideUrl;
   return Version::GetUpdateFeedUrl();
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+bool UpdaterComponent::autoUpdateEnabled() const
+{
+  return SettingsComponent::Get().value(SETTINGS_SECTION_MAIN, "autoUpdate").toBool();
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+QVariantMap UpdaterComponent::status() const
+{
+  QVariantMap s;
+  s.insert("phase", m_phase);
+  s.insert("version", m_update.value("version"));
+  s.insert("currentVersion", currentVersion());
+  s.insert("received", m_received);
+  s.insert("total", m_total);
+  s.insert("message", m_resultMessage);
+  s.insert("automatic", m_automatic);
+  return s;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -122,6 +170,7 @@ void UpdaterComponent::check(bool force)
   {
     qInfo() << "Updater: no update feed configured";
     m_result = Result::Error;
+    m_phase = "error";
     m_resultMessage = "No update feed is configured for this build";
     emitResult();
     return;
@@ -130,12 +179,15 @@ void UpdaterComponent::check(bool force)
   {
     qWarning() << "Updater: refusing feed URL" << url.toString() << "(HTTPS required)";
     m_result = Result::Error;
+    m_phase = "error";
     m_resultMessage = "The update feed must use HTTPS";
     emitResult();
     return;
   }
 
   qInfo() << "Updater: checking" << url.toString() << "for" << platformKey() << "current" << currentVersion();
+  if (m_phase == "idle" || m_phase == "upToDate" || m_phase == "error")
+    m_phase = "checking";
 
   QNetworkRequest request(url);
   request.setHeader(QNetworkRequest::UserAgentHeader, SystemComponent::Get().getUserAgent());
@@ -156,6 +208,7 @@ void UpdaterComponent::onFeedFinished(QNetworkReply* reply)
   {
     qWarning() << "Updater:" << message;
     m_result = Result::Error;
+    m_phase = "error";
     m_resultMessage = message;
     emitResult();
   };
@@ -192,6 +245,7 @@ void UpdaterComponent::onFeedFinished(QNetworkReply* reply)
   {
     qInfo() << "Updater: up to date (feed" << version << "current" << currentVersion() << ")";
     m_result = Result::UpToDate;
+    m_phase = "upToDate";
     emitResult();
     return;
   }
@@ -205,6 +259,7 @@ void UpdaterComponent::onFeedFinished(QNetworkReply* reply)
   {
     qInfo() << "Updater: version" << version << "has no build for" << key;
     m_result = Result::UpToDate;
+    m_phase = "upToDate";
     emitResult();
     return;
   }
@@ -220,6 +275,9 @@ void UpdaterComponent::onFeedFinished(QNetworkReply* reply)
     return;
   }
 
+  // A forced re-check that finds the same version keeps the download in progress.
+  bool sameUpdate = m_result == Result::Available && m_update.value("version").toString() == version;
+
   m_update.clear();
   m_update.insert("version", version);
   m_update.insert("currentVersion", currentVersion());
@@ -234,10 +292,19 @@ void UpdaterComponent::onFeedFinished(QNetworkReply* reply)
 #else
   m_update.insert("canInstall", false);
 #endif
+  m_update.insert("automatic", autoUpdateEnabled());
 
   qInfo() << "Updater: version" << version << "available for" << key << "from" << downloadUrl.toString();
   m_result = Result::Available;
+  if (!sameUpdate)
+    m_phase = "available";
   emitResult();
+
+  if (!sameUpdate && autoUpdateEnabled() && m_update.value("canInstall").toBool())
+  {
+    qInfo() << "Updater: downloading" << version << "automatically";
+    startDownload(true);
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -248,33 +315,61 @@ void UpdaterComponent::failInstall(const QString& message)
     m_download.close();
   if (!m_download.fileName().isEmpty())
     m_download.remove();
+  m_phase = "error";
+  m_resultMessage = message;
   emit updateError(message);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void UpdaterComponent::install()
 {
+  startDownload(false);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void UpdaterComponent::startDownload(bool automatic)
+{
   if (m_result != Result::Available)
   {
     emit updateError("There is no update to install");
     return;
   }
+
+  if (m_installerLaunched)
+    return;
+
+  // Already verified and waiting for playback to stop: the user wants it now.
+  if (!m_readyInstaller.isEmpty())
+  {
+    if (!automatic)
+      launchInstaller(true);
+    return;
+  }
+
   if (m_downloadReply)
-    return; // already downloading
+  {
+    // A manual request during an automatic download installs as soon as it finishes.
+    if (!automatic)
+      m_automatic = false;
+    return;
+  }
 
   QUrl url(m_update.value("url").toString());
 
 #ifndef Q_OS_WIN
   // No silent installer on this platform yet: hand the download to the browser.
-  qInfo() << "Updater: opening download" << url.toString();
-  QDesktopServices::openUrl(url);
+  if (!automatic)
+  {
+    qInfo() << "Updater: opening download" << url.toString();
+    QDesktopServices::openUrl(url);
+  }
   return;
 #endif
 
   QString dir = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/arc-update";
   if (!QDir().mkpath(dir))
   {
-    emit updateError("Could not create a folder for the download");
+    failInstall("Could not create a folder for the download");
     return;
   }
 
@@ -289,12 +384,17 @@ void UpdaterComponent::install()
   m_download.remove();
   if (!m_download.open(QIODevice::WriteOnly))
   {
-    emit updateError(QString("Could not write %1: %2").arg(m_download.fileName(), m_download.errorString()));
+    failInstall(QString("Could not write %1: %2").arg(m_download.fileName(), m_download.errorString()));
     return;
   }
   m_hash.reset();
+  m_automatic = automatic;
+  m_received = 0;
+  m_total = m_update.value("size").toLongLong();
+  m_phase = "downloading";
 
-  qInfo() << "Updater: downloading" << url.toString() << "to" << m_download.fileName();
+  qInfo() << "Updater: downloading" << url.toString() << "to" << m_download.fileName()
+          << (automatic ? "(automatic)" : "(requested)");
 
   QNetworkRequest request(url);
   request.setHeader(QNetworkRequest::UserAgentHeader, SystemComponent::Get().getUserAgent());
@@ -312,7 +412,13 @@ void UpdaterComponent::install()
       reply->abort();
     }
   });
-  connect(reply, &QNetworkReply::downloadProgress, this, &UpdaterComponent::downloadProgress);
+  connect(reply, &QNetworkReply::downloadProgress, this, [this](qint64 received, qint64 total)
+  {
+    m_received = received;
+    if (total > 0)
+      m_total = total;
+    emit downloadProgress(received, total);
+  });
   connect(reply, &QNetworkReply::finished, this, &UpdaterComponent::onDownloadFinished);
 }
 
@@ -362,20 +468,67 @@ void UpdaterComponent::onDownloadFinished()
     return;
   }
 
-  QString version = m_update.value("version").toString();
-  QString path = QDir::toNativeSeparators(m_download.fileName());
-  QStringList args = { "/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART" };
+  m_readyInstaller = QDir::toNativeSeparators(m_download.fileName());
+  qInfo() << "Updater: checksum verified for" << m_readyInstaller;
 
-  qInfo() << "Updater: checksum verified, starting installer" << path << args;
-  if (!QProcess::startDetached(path, args))
+  if (m_automatic)
+    installWhenIdle();
+  else
+    launchInstaller(true);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void UpdaterComponent::installWhenIdle()
+{
+  if (m_mediaActive)
   {
+    QString version = m_update.value("version").toString();
+    qInfo() << "Updater: holding" << version << "until playback stops";
+    m_phase = "waiting";
+    emit waitingForPlayback(version);
+    return;
+  }
+  launchInstaller(true);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void UpdaterComponent::launchInstaller(bool relaunchAndQuit)
+{
+  if (m_installerLaunched || m_readyInstaller.isEmpty())
+    return;
+
+  QString version = m_update.value("version").toString();
+  QStringList args = { "/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART" };
+  if (!relaunchAndQuit)
+    args << "/NoRelaunch=1"; // Arc is already closing; the user chose to quit, so stay closed
+
+  qInfo() << "Updater: starting installer" << m_readyInstaller << args;
+  if (!QProcess::startDetached(m_readyInstaller, args))
+  {
+    m_readyInstaller.clear();
     failInstall("The installer could not be started");
     return;
   }
 
+  m_installerLaunched = true;
+  m_phase = "installing";
   emit installing(version);
 
-  // Give the page a moment to show "installing", then quit so the installer can
-  // replace our files. The installer also closes Arc itself if it is still running.
-  QTimer::singleShot(1200, this, []() { SystemComponent::Get().exit(); });
+  if (relaunchAndQuit)
+  {
+    // Give the page a moment to show "installing", then quit so the installer can
+    // replace our files. The installer also closes Arc itself if it is still running.
+    QTimer::singleShot(1200, this, []() { SystemComponent::Get().exit(); });
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void UpdaterComponent::onAboutToQuit()
+{
+  // A verified update that was waiting for playback to end installs as Arc closes.
+  if (!m_installerLaunched && !m_readyInstaller.isEmpty())
+  {
+    qInfo() << "Updater: Arc is closing, installing the downloaded update";
+    launchInstaller(false);
+  }
 }
