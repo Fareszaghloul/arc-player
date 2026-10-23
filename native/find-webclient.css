@@ -1,138 +1,177 @@
+/* Arc connect screen: the first page the app shows before a server is known. */
+
+:root {
+    --bg: #000;
+    --surface: #1c1c1e;
+    --surface-hover: #2c2c2e;
+    --text: #f5f5f7;
+    --text-2: rgba(245, 245, 247, 0.6);
+    --text-3: rgba(245, 245, 247, 0.32);
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+            "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI",
+            "Helvetica Neue", Inter, system-ui, sans-serif;
+    --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
 * {
     box-sizing: border-box;
 }
+
+html,
 body {
-    background-color: #101010;
-    color: #ddd;
-    color: rgba(255, 255, 255, 0.8);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-size: 1em;
-    padding: 1em;
-}
-.logo {
-    max-width: 500px;
-    margin-bottom: 2em;
-    margin-left: auto;
-    margin-right: auto;
-    display: block;
-}
-input[type=text] {
-    display: block;
-    width: 100%;
-    font-size: 1em;
-    color: inherit;
-    background: #292929;
-    border: 0.16em solid #292929;
-    border-radius: 0.2em;
-    padding: 0.6em 0.8em;
-    font-family: inherit;
-}
-input[type=text]:focus {
-    border-color: #00a4dc;
-    outline: none;
-}
-input[type=text]::placeholder {
-    color: #666;
-    color: rgba(255, 255, 255, 0.3);
-    opacity: 1;
+    height: 100%;
+    margin: 0;
 }
 
-button {
-    width: 100%;
-    color: #fff;
-    background: #00a4dc;
-    border: none;
-    border-radius: 0.2em;
-    font-size: 1em;
-    padding: 0.75em 1.5em;
-    cursor: pointer;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
-    outline: none;
-    font-family: inherit;
+body {
+    background:
+        radial-gradient(ellipse 70% 55% at 50% 0%, rgba(255, 255, 255, 0.07), transparent 70%),
+        var(--bg);
+    color: var(--text-2);
+    font-family: var(--font);
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
 }
-button:hover:not(:disabled) {
-    background: #0cb0e8;
-}
-button:disabled {
-    background-color: #292929;
-    cursor: default;
-    opacity: 0.6;
-}
+
 #container {
     position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
+    inset: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    padding: 24px;
+    animation: rise 0.7s var(--ease) both;
 }
-.logo {
-    max-width: 500px;
-    margin-bottom: 2em;
-    margin-left: auto;
-    margin-right: auto;
-    display: block;
+
+.wordmark {
+    font-size: 88px;
+    font-weight: 700;
+    letter-spacing: -0.06em;
+    line-height: 1;
+    color: var(--text);
+    margin-bottom: 40px;
+    user-select: none;
 }
-#title {
-    margin-top: 1em;
-    margin-bottom: 0;
-    font-size: 1.5em;
-    font-weight: 400;
-    color: #ddd;
-    color: rgba(255, 255, 255, 0.8);
-    min-height: 1.5em;
-    height: 1.5em;
-    max-width: 450px;
-    width: 100%;
-    text-align: left;
-    visibility: hidden;
-}
+
 #connect-form {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
+    max-width: 360px;
     position: relative;
 }
+
+#title {
+    width: 100%;
+    min-height: 1.4em;
+    height: 1.4em;
+    margin: 0 0 14px;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    text-align: center;
+    color: var(--text-2);
+    visibility: hidden;
+}
+
+input[type=text] {
+    display: block;
+    width: 100%;
+    height: 48px;
+    padding: 0 16px;
+    font: 400 16px/1 var(--font);
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid transparent;
+    border-radius: 12px;
+    outline: none;
+    transition: border-color 0.2s var(--ease), background-color 0.2s var(--ease);
+}
+input[type=text]:hover {
+    background: var(--surface-hover);
+}
+input[type=text]:focus {
+    border-color: rgba(255, 255, 255, 0.5);
+    background: var(--surface);
+}
+input[type=text]::placeholder {
+    color: var(--text-3);
+    opacity: 1;
+}
+
 #address {
-    margin-bottom: 1em;
-    max-width: 450px;
-    height: 2.5em;
+    margin-bottom: 12px;
     visibility: hidden;
 }
 #address.connecting {
     visibility: hidden;
 }
-#spinner {
-    border: 6px solid #292929;
-    border-top: 6px solid #00a4dc;
-    border-radius: 50%;
-    width: 80px;
-    height: 80px;
-    animation: spin 1s linear infinite;
-    display: none;
-    position: absolute;
-    top: calc(1em + 1.5em + 1.25em);
-    left: 50%;
-    margin-left: -40px;
+
+button {
+    width: 100%;
+    height: 48px;
+    padding: 0 24px;
+    font: 600 16px/1 var(--font);
+    letter-spacing: -0.01em;
+    color: #000;
+    background: var(--text);
+    border: none;
+    border-radius: 12px;
+    outline: none;
+    cursor: pointer;
+    transition: background-color 0.2s var(--ease), transform 0.12s var(--ease);
 }
+button:hover:not(:disabled) {
+    background: #fff;
+}
+button:active:not(:disabled) {
+    transform: scale(0.98);
+}
+button:focus-visible {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+button:disabled {
+    color: var(--text-3);
+    background-color: var(--surface);
+    cursor: default;
+}
+
 #connect-button {
-    max-width: 450px;
-    min-height: 2.5em;
     visibility: hidden;
 }
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
 #connect-button.cancel {
-    background: #cb272a;
+    color: var(--text);
+    background: var(--surface);
 }
 #connect-button.cancel:hover:not(:disabled) {
-    background: #d93134;
+    background: var(--surface-hover);
+}
+
+#spinner {
+    display: none;
+    position: absolute;
+    top: 52px;
+    left: 50%;
+    width: 36px;
+    height: 36px;
+    margin-left: -18px;
+    border: 2.5px solid rgba(255, 255, 255, 0.14);
+    border-top-color: var(--text);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #container { animation: none; }
 }

@@ -62,7 +62,6 @@ public:
   Q_INVOKABLE void fetchPageForCSPWorkaround(QString url);
   Q_SIGNAL void pageContentReady(QString html, QString finalUrl, bool hadCSP);
 
-  Q_INVOKABLE void checkForUpdates();
 
   // called by the web-client when everything is properly inited
   Q_INVOKABLE void hello(const QString& version);
@@ -71,7 +70,6 @@ public:
   Q_SIGNAL void capabilitiesChanged(const QString& capabilities);
   Q_SIGNAL void userInfoChanged();
 
-  Q_SIGNAL void updateInfoEmitted(QString url);
 
   // possible os types type enum
   enum PlatformType
@@ -111,7 +109,6 @@ public:
   QSslConfiguration getSSLConfiguration();
 
 private Q_SLOTS:
-  void updateInfoHandler(QNetworkReply* reply);
 
 signals:
   void hostMessage(const QString& message);

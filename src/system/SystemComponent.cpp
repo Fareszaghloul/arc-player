@@ -601,7 +601,8 @@ QString SystemComponent::getNativeShellScript()
     ":/web-client/extension/updatePlugin.js",
     ":/web-client/extension/connectivityHelper.js",
     ":/web-client/extension/nativeshell.js",
-    ":/web-client/extension/arcTheme.js"
+    ":/web-client/extension/arcTheme.js",
+    ":/web-client/extension/arcHome.js"
   };
 
   cachedScript = jmpInfoDeclaration;
@@ -673,42 +674,7 @@ void SystemComponent::fetchPageForCSPWorkaround(QString url)
   });
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////
-void SystemComponent::checkForUpdates()
-{
-#ifndef DISABLE_UPDATE_CHECK
-  if (SettingsComponent::Get().value(SETTINGS_SECTION_MAIN, "checkForUpdates").toBool()) {
-#if !defined(Q_OS_WIN) && !defined(Q_OS_MAC)
-    QNetworkAccessManager *manager = new QNetworkAccessManager(this);
-    // CHANGE-ME: point at the fork's own release feed before enabling CHECK_FOR_UPDATES in a release build.
-    QString checkUrl = "https://github.com/CHANGE-ME/arc/releases/latest";
-    QUrl qCheckUrl = QUrl(checkUrl);
-    qDebug() << QString("Checking URL for updates: %1").arg(checkUrl);
-    QNetworkRequest req(qCheckUrl);
-    req.setHeader(QNetworkRequest::UserAgentHeader, getUserAgent());
-
-    connect(manager, &QNetworkAccessManager::finished, this, &SystemComponent::updateInfoHandler);
-    manager->get(req);
-#else
-    emit updateInfoEmitted("SSL_UNAVAILABLE");
-#endif
-  }
-#endif
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-void SystemComponent::updateInfoHandler(QNetworkReply* reply)
-{
-  if (reply->error() == QNetworkReply::NoError) {
-    int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    if(statusCode == 302) {
-      QUrl redirectUrl = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
-      emit updateInfoEmitted(redirectUrl.toString());
-    }
-  }
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
+/////
 #define BASESTR "protocols=shoutcast,http-video;videoDecoders=h264{profile:high&resolution:2160&level:52};audioDecoders=mp3,aac,dts{bitrate:800000&channels:%1},ac3{bitrate:800000&channels:%2}"
 
 /////////////////////////////////////////////////////////////////////////////////////////

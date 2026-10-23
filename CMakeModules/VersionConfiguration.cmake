@@ -3,6 +3,11 @@ string(TIMESTAMP CURRENT_DATE "%Y-%m-%d")
 
 option(UPGRADE_DEBUG "" OFF)
 
+# Where Arc's in-app updater looks for new versions: the arc-update.json written by
+# dev/windows/publish-update.ps1. Empty disables update checks unless the hidden
+# main.updateFeedUrl setting provides one.
+set(ARC_UPDATE_FEED_URL "" CACHE STRING "URL of the arc-update.json update feed")
+
 # Read version from VERSION file
 file(READ "${CMAKE_SOURCE_DIR}/VERSION" VERSION_STRING)
 string(STRIP "${VERSION_STRING}" VERSION_STRING)

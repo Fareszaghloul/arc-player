@@ -32,3 +32,8 @@ QString Version::GetQtDepsVersion()
 {
   return QString("@QT_DEPS_HASH@");
 }
+
+QString Version::GetUpdateFeedUrl()
+{
+  return QString("@ARC_UPDATE_FEED_URL@");
+}

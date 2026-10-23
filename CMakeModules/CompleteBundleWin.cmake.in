@@ -48,9 +48,14 @@ else()
   message(STATUS "Not using separate ANGLE deps")
 endif()
 
-# Bundle MSVC runtime DLLs (pre-extracted by setup-windows.bat)
-set(VCRUNTIME_DIR "@PROJECT_SOURCE_DIR@/deps/vcruntime")
-set(VCREDIST_EXE "@PROJECT_SOURCE_DIR@/deps/vc_redist.x64.exe")
+# Bundle MSVC runtime DLLs (pre-extracted by dev/windows/setup.bat into dev/windows/deps;
+# CI layouts keep them in deps/ at the repository root)
+set(DEPS_ROOT "@PROJECT_SOURCE_DIR@/dev/windows/deps")
+if(NOT EXISTS "${DEPS_ROOT}/vcruntime")
+  set(DEPS_ROOT "@PROJECT_SOURCE_DIR@/deps")
+endif()
+set(VCRUNTIME_DIR "${DEPS_ROOT}/vcruntime")
+set(VCREDIST_EXE "${DEPS_ROOT}/vc_redist.x64.exe")
 
 if(EXISTS "${VCRUNTIME_DIR}" AND EXISTS "${VCREDIST_EXE}")
   # Copy runtime DLLs to redist subfolder

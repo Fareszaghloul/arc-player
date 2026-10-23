@@ -125,8 +125,13 @@
       {
         "value": "checkForUpdates",
         "display_name": "Check For Updates",
-        "help": "Allows user to disable update check plugin script.",
+        "help": "Checks for a new version of Arc when the app starts and offers to install it.",
         "default": true
+      },
+      {
+        "value": "updateFeedUrl",
+        "default": "",
+        "hidden": true
       },
       {
         "value": "enableInputRepeat",

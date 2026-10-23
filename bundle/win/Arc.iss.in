@@ -72,6 +72,8 @@ Name: "{autodesktop}\Arc"; Filename: "{app}\{#MyAppExeName}"; Comment: "Arc medi
 Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /passive /norestart"; StatusMsg: "Installing Visual C++ Redistributable..."; Flags: waituntilterminated; Check: ShouldInstallVCRedist
 ; Launch app after install
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch Arc"; Flags: nowait postinstall skipifsilent
+; Relaunch after an in-app update, which runs this installer with /SILENT
+Filename: "{app}\{#MyAppExeName}"; Flags: nowait; Check: WizardSilent
 
 [Code]
 var

@@ -1,5 +1,5 @@
 @echo off
-REM Jellyfin Desktop - Windows bundling script
+REM Arc - Windows bundling script
 REM Run build.bat first
 
 setlocal enabledelayedexpansion
@@ -41,6 +41,6 @@ if errorlevel 1 (
 
 echo.
 echo Bundle complete!
-echo Installer: %BUILD_DIR%\JellyfinDesktop-*.exe
-echo Portable:  %BUILD_DIR%\JellyfinDesktop-*.zip
+echo Installer: %BUILD_DIR%\Arc-*.exe
+echo Portable:  %BUILD_DIR%\Arc-*.zip
 endlocal

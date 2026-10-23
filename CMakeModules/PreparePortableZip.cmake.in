@@ -24,8 +24,11 @@ foreach(f ${ALL_FILES})
   file(COPY "${SOURCE_DIR}/${f}" DESTINATION "${ZIP_DIR}/${dir}")
 endforeach()
 
-# Copy runtime DLLs to root (for portable use)
-set(VCRUNTIME_DIR "${PROJECT_SOURCE_DIR}/deps/vcruntime")
+# Copy runtime DLLs to root (for portable use); see CompleteBundleWin.cmake.in for the two layouts
+set(VCRUNTIME_DIR "${PROJECT_SOURCE_DIR}/dev/windows/deps/vcruntime")
+if(NOT EXISTS "${VCRUNTIME_DIR}")
+  set(VCRUNTIME_DIR "${PROJECT_SOURCE_DIR}/deps/vcruntime")
+endif()
 if(EXISTS "${VCRUNTIME_DIR}")
   file(GLOB RUNTIME_DLLS "${VCRUNTIME_DIR}/*.dll")
   foreach(dll ${RUNTIME_DLLS})

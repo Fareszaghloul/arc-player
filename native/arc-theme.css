@@ -1,5 +1,5 @@
 /*
- * Arc theme, applied on top of whatever theme the Jellyfin server's web client uses.
+ * Arc theme: a black-and-white, Apple-style skin over the server's web client.
  *
  * native/arcTheme.js attaches this file as a constructed stylesheet in
  * document.adoptedStyleSheets. The cascade orders adopted sheets after every
@@ -7,96 +7,441 @@
  * same specificity no matter when the web client loads its theme. Where
  * jellyfin-web marks a declaration !important, the override must be !important too.
  *
- * This first version only swaps the jellyfin-web accent (#00a4dc) for Arc's.
- * Change the colour in one place: the custom properties on :root.
+ * Design tokens live on :root. The palette is monochrome: the "accent" is white
+ * and anything filled with it carries black text (--arc-on-accent).
  */
 
 :root {
-    --arc-accent: #6c4dff;
-    --arc-accent-hover: #8166ff;
-    --arc-accent-soft: rgba(108, 77, 255, 0.2);
-    --arc-accent-track: rgba(108, 77, 255, 0.5);
+    --arc-bg: #000;
+    --arc-surface: #111113;
+    --arc-surface-2: #1c1c1e;
+    --arc-surface-3: #2c2c2e;
+    --arc-hairline: rgba(255, 255, 255, 0.08);
+    --arc-text: #f5f5f7;
+    --arc-text-2: rgba(245, 245, 247, 0.62);
+    --arc-text-3: rgba(245, 245, 247, 0.38);
+    --arc-accent: #f5f5f7;
+    --arc-accent-hover: #ffffff;
+    --arc-on-accent: #000;
+    --arc-accent-soft: rgba(255, 255, 255, 0.12);
+    --arc-accent-track: rgba(255, 255, 255, 0.45);
+    --arc-radius-sm: 8px;
+    --arc-radius: 12px;
+    --arc-radius-lg: 20px;
+    --arc-blur: saturate(180%) blur(24px);
+    --arc-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+    --arc-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+                "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI",
+                "Helvetica Neue", Inter, system-ui, sans-serif;
 }
 
-/* Bundled connect screen (native/find-webclient.html) */
-#connect-button:not(:disabled) { background: var(--arc-accent); }
-#connect-button:hover:not(:disabled) { background: var(--arc-accent-hover); }
-#address:focus { border-color: var(--arc-accent); }
+/* ---------------------------------------------------------------- base */
 
-/* Filled accent surfaces */
+html,
+body,
+.backgroundContainer,
+.skinBody,
+.dialogContainer .dialog,
+.mainAnimatedPages,
+.page {
+    background-color: var(--arc-bg);
+}
+
+html,
+body,
+button,
+input,
+select,
+textarea,
+.emby-button,
+.emby-input,
+.emby-select,
+.emby-textarea {
+    font-family: var(--arc-font);
+    -webkit-font-smoothing: antialiased;
+}
+
+html { color: var(--arc-text-2); }
+
+h1, h2, h3, .sectionTitle, .pageTitle, .itemName {
+    color: var(--arc-text);
+    letter-spacing: -0.02em;
+}
+
+::selection { background: rgba(255, 255, 255, 0.24); color: var(--arc-text); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.18);
+    border: 3px solid transparent;
+    border-radius: 10px;
+    background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.3); }
+
+/* -------------------------------------------------- header and wordmark */
+
+.skinHeader,
+.skinHeader-withBackground,
+.skinHeader.semiTransparent {
+    background: rgba(0, 0, 0, 0.72) !important;
+    -webkit-backdrop-filter: var(--arc-blur) !important;
+    backdrop-filter: var(--arc-blur) !important;
+    border-bottom: 1px solid var(--arc-hairline);
+    box-shadow: none;
+}
+
+/* The Jellyfin banner image becomes a typographic "Arc" wordmark. */
+.pageTitleWithDefaultLogo {
+    background-image: none !important;
+    width: auto !important;
+    display: inline-flex;
+    align-items: center;
+}
+.pageTitleWithDefaultLogo::after {
+    content: "Arc";
+    font: 700 1.55rem/1 var(--arc-font);
+    letter-spacing: -0.045em;
+    color: var(--arc-text);
+}
+
+.headerTabs .emby-tab-button { color: var(--arc-text-3); font-weight: 600; }
+.headerTabs .emby-tab-button-active,
+.emby-tab-button-active { color: var(--arc-text); }
+
+/* ------------------------------------------------------- side navigation */
+
+.mainDrawer {
+    background: rgba(10, 10, 12, 0.86);
+    -webkit-backdrop-filter: var(--arc-blur);
+    backdrop-filter: var(--arc-blur);
+    border-right: 1px solid var(--arc-hairline);
+}
+.navMenuOption {
+    border-radius: var(--arc-radius-sm);
+    margin: 1px 0.6em;
+    color: var(--arc-text-2);
+}
+.navMenuOption:hover { background: rgba(255, 255, 255, 0.06); color: var(--arc-text); }
+.navMenuOption-selected {
+    background: var(--arc-accent-soft) !important;
+    color: var(--arc-text) !important;
+}
+.sidebarHeader { color: var(--arc-text-3); letter-spacing: 0.02em; }
+
+/* ---------------------------------------------------------------- buttons */
+
+.emby-button {
+    text-transform: none;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.emby-button.raised,
+.emby-button.button-submit {
+    border-radius: var(--arc-radius);
+    transition: background-color 0.2s var(--arc-ease), transform 0.12s var(--arc-ease);
+}
+.emby-button.raised:active,
+.emby-button.button-submit:active { transform: scale(0.98); }
+
+.emby-button.raised:not(.button-submit) {
+    background: var(--arc-surface-2);
+    color: var(--arc-text);
+}
+.emby-button.raised:not(.button-submit):hover { background: var(--arc-surface-3); }
+
 .button-submit,
-.selectionCommandsPanel,
-.emby-button.show-focus:focus,
-.emby-button.detailFloatingButton,
-.countIndicator,
-.fullSyncIndicator,
-.mediaSourceIndicator,
-.playedIndicator { background: var(--arc-accent); }
+.emby-button.button-submit {
+    background: var(--arc-accent);
+    color: var(--arc-on-accent);
+}
+.button-submit:focus,
+.button-submit:hover { background: var(--arc-accent-hover); color: var(--arc-on-accent); }
 
-.button-submit:focus { background: var(--arc-accent-hover); }
+.paper-icon-button-light { border-radius: 50%; }
+.paper-icon-button-light:hover:not(:disabled),
+.paper-icon-button-light:active:not(:disabled),
+.listItemImageButton:hover {
+    background-color: var(--arc-accent-soft);
+    color: var(--arc-text);
+}
+.paper-icon-button-light.show-focus:focus { color: var(--arc-text); }
 
-.navMenuOption-selected { background: var(--arc-accent) !important; }
+.button-link,
+.button-flat:hover,
+.buttonActive,
+.button-accent-flat { color: var(--arc-text) !important; }
 
-.itemProgressBarForeground,
-.playbackProgress > div,
-.iconOsdProgressInner,
-.emby-checkbox:checked + span + .checkboxOutline,
-.listItemIcon:not(.listItemIcon-transparent),
-.alphaPickerButton-selected,
-.alphaPickerButton-tv:focus,
-.guide-date-tab-button.show-focus:focus,
-.mdl-slider-background-lower,
-.sliderMarker.watched { background-color: var(--arc-accent); }
+/* ----------------------------------------------------------------- inputs */
 
-.emby-select-tv-withcolor:focus,
-.guide-channelHeaderCell:focus,
-.programCell:focus { background-color: var(--arc-accent) !important; }
+.emby-input,
+.emby-textarea,
+.emby-select-withcolor {
+    background: var(--arc-surface-2);
+    border: 1px solid transparent;
+    border-radius: var(--arc-radius-sm);
+    color: var(--arc-text);
+}
+.emby-input:focus,
+.emby-textarea:focus { border-color: rgba(255, 255, 255, 0.5); }
+.emby-select-withcolor:focus { border-color: rgba(255, 255, 255, 0.5) !important; }
 
-/* Vendor pseudo-elements get their own rules: one unknown selector drops a whole list. */
-progress::-webkit-progress-value { background-color: var(--arc-accent); }
-.mdl-slider::-webkit-slider-thumb { background: var(--arc-accent); }
+.inputLabel,
+.selectLabel,
+.textareaLabel { color: var(--arc-text-2); }
+.inputLabelFocused,
+.selectLabelFocused,
+.textareaLabelFocused { color: var(--arc-text); }
+
+.checkboxOutline { border-radius: 6px; }
+.emby-checkbox:checked + span + .checkboxOutline {
+    background-color: var(--arc-accent);
+    border-color: var(--arc-accent);
+}
+.emby-checkbox:checked + span + .checkboxOutline .checkboxIcon { color: var(--arc-on-accent); }
+.emby-checkbox:focus:not(:checked) + span + .checkboxOutline { border-color: var(--arc-text); }
 
 .mdl-switch__input:checked + .mdl-switch__label + .mdl-switch__trackContainer > .mdl-switch__thumb { background: var(--arc-accent); }
 .mdl-switch__input:checked + .mdl-switch__label + .mdl-switch__trackContainer > .mdl-switch__track { background: var(--arc-accent-track); }
 
-/* Accent borders */
-.emby-input:focus,
-.emby-textarea:focus,
-.emby-checkbox:checked + span + .checkboxOutline,
-.emby-checkbox:focus:not(:checked) + span + .checkboxOutline,
-.itemSelectionPanel,
+.mdl-slider { color: var(--arc-accent); }
+.mdl-slider-background-lower,
+.sliderMarker.watched { background-color: var(--arc-accent); }
+.mdl-slider::-webkit-slider-thumb { background: var(--arc-accent); }
+
+/* ------------------------------------------------- progress and indicators */
+
+.itemProgressBar { background: rgba(255, 255, 255, 0.22); border-radius: 4px; overflow: hidden; }
+.itemProgressBarForeground,
+.playbackProgress > div,
+.iconOsdProgressInner { background-color: var(--arc-accent); }
+progress::-webkit-progress-value { background-color: var(--arc-accent); }
+
 .progressring-spiner,
 .mdl-spinner__layer-1,
 .mdl-spinner__layer-2,
 .mdl-spinner__layer-3,
 .mdl-spinner__layer-4 { border-color: var(--arc-accent); }
 
-.emby-select-withcolor:focus,
+.countIndicator,
+.fullSyncIndicator,
+.mediaSourceIndicator,
+.playedIndicator {
+    background: var(--arc-accent);
+    color: var(--arc-on-accent);
+}
+.playedIndicator .indicatorIcon,
+.countIndicator .indicatorIcon { color: var(--arc-on-accent); }
+
+.listItemIcon:not(.listItemIcon-transparent) {
+    background-color: var(--arc-accent);
+    color: var(--arc-on-accent);
+}
+
+.selectionCommandsPanel { background: var(--arc-accent); color: var(--arc-on-accent); }
+.itemSelectionPanel { border-color: var(--arc-accent); }
+
+.emby-button.detailFloatingButton { background-color: var(--arc-accent); color: var(--arc-on-accent); }
+.emby-button.show-focus:focus { background: var(--arc-accent); color: var(--arc-on-accent); }
+
+.alphaPickerButton-selected,
+.alphaPickerButton-tv:focus { background-color: var(--arc-accent); color: var(--arc-on-accent) !important; }
+
+.emby-select-tv-withcolor:focus,
+.guide-channelHeaderCell:focus,
+.programCell:focus {
+    background-color: var(--arc-accent) !important;
+    color: var(--arc-on-accent) !important;
+}
+.guide-date-tab-button.show-focus:focus { background-color: var(--arc-accent); color: var(--arc-on-accent); }
+.guide-date-tab-button.emby-tab-button-active,
+.guide-date-tab-button:focus { color: var(--arc-text); }
+
+.upNextDialog-countdownText,
+.metadataSidebarIcon { color: var(--arc-text); }
+
+/* ------------------------------------------------------------------ cards */
+
+.cardBox,
+.cardScalable,
+.cardImageContainer,
+.cardContent,
+.cardOverlayContainer,
+.cardImage { border-radius: var(--arc-radius); }
+
+.cardScalable {
+    overflow: hidden;
+    transition: transform 0.35s var(--arc-ease), box-shadow 0.35s var(--arc-ease);
+}
+.card:hover .cardScalable {
+    transform: scale(1.035);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+}
+.cardImageContainer.defaultCardBackground { background-color: var(--arc-surface-2); }
+
 .card:focus .cardBox.visualCardBox,
 .card:focus .cardBox:not(.visualCardBox) .cardScalable { border-color: var(--arc-accent) !important; }
 
-/* Accent text */
-.button-link,
-.button-flat:hover,
-.inputLabelFocused,
-.selectLabelFocused,
-.textareaLabelFocused,
-.emby-tab-button:hover,
-.emby-tab-button.show-focus:focus,
-.guide-date-tab-button.emby-tab-button-active,
-.guide-date-tab-button:focus,
-.paper-icon-button-light.show-focus:focus,
-.upNextDialog-countdownText,
-.metadataSidebarIcon,
-.mdl-slider { color: var(--arc-accent); }
+.cardText { color: var(--arc-text-2); font-size: 0.82em; }
+.cardText-first { color: var(--arc-text); font-weight: 500; }
+.cardFooter { padding-top: 0.45em; }
 
-.buttonActive,
-.button-accent-flat { color: var(--arc-accent) !important; }
+.visualCardBox { background: var(--arc-surface); border-radius: var(--arc-radius); }
 
-/* Hover halos */
-.paper-icon-button-light:hover:not(:disabled),
-.paper-icon-button-light:active:not(:disabled),
-.listItemImageButton:hover {
-    background-color: var(--arc-accent-soft);
-    color: var(--arc-accent);
+/* --------------------------------------------------------------- dialogs */
+
+.dialog,
+.formDialog,
+.actionSheet {
+    background: rgba(28, 28, 30, 0.92) !important;
+    -webkit-backdrop-filter: var(--arc-blur);
+    backdrop-filter: var(--arc-blur);
+    border-radius: var(--arc-radius-lg);
+    border: 1px solid var(--arc-hairline);
+}
+.dialog.dialog-fullscreen { border-radius: 0; }
+.formDialogHeader { background: transparent; border-bottom: 1px solid var(--arc-hairline); }
+
+/* ------------------------------------------------------------ home screen */
+
+.homePage .sectionTitle,
+.homePage .sectionTitle-cards {
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+.homePage .sectionTitleContainer { margin-bottom: 0.4em; }
+.homePage .verticalSection { margin-bottom: 1.6em; }
+.homePage .sectionTitleContainer .sectionTitleTextButton { color: var(--arc-text); }
+
+/* Captions sit left-aligned under the artwork, as in Apple's TV and Music apps. */
+.homePage .cardFooter,
+.homePage .cardText,
+.homePage .cardTextCentered,
+.homePage .cardTextCentered > .textActionButton { text-align: left !important; }
+.homePage .cardFooter { padding-left: 2px; padding-right: 2px; }
+
+/* "My Media" library tiles */
+.homePage .section0 .card .cardText { color: var(--arc-text); font-weight: 600; }
+
+/* Hero banner built by native/arcHome.js */
+.arcHero {
+    position: relative;
+    height: clamp(320px, 52vh, 620px);
+    margin: 0 3.3% 2.2em;
+    border-radius: var(--arc-radius-lg);
+    overflow: hidden;
+    background: var(--arc-surface);
+    isolation: isolate;
+}
+.arcHero-slide {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center 25%;
+    opacity: 0;
+    transform: scale(1.04);
+    transition: opacity 1s var(--arc-ease), transform 7s linear;
+}
+.arcHero-slide.is-active { opacity: 1; transform: scale(1); }
+.arcHero-scrim {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.45) 42%, rgba(0, 0, 0, 0) 70%),
+        linear-gradient(0deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 45%);
+    pointer-events: none;
+}
+.arcHero-content {
+    position: absolute;
+    left: clamp(24px, 4vw, 56px);
+    bottom: clamp(28px, 5vh, 56px);
+    max-width: min(520px, 46%);
+    color: var(--arc-text);
+}
+.arcHero-eyebrow {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--arc-text-2);
+    margin: 0 0 0.7em;
+}
+.arcHero-logo {
+    display: block;
+    max-width: 100%;
+    max-height: 120px;
+    margin-bottom: 0.7em;
+    object-fit: contain;
+    object-position: left bottom;
+}
+.arcHero-title {
+    font: 700 clamp(2rem, 3.6vw, 3.4rem)/1.02 var(--arc-font);
+    letter-spacing: -0.035em;
+    margin: 0 0 0.25em;
+}
+.arcHero-meta { color: var(--arc-text-2); font-size: 0.92rem; margin: 0 0 0.8em; }
+.arcHero-overview {
+    color: var(--arc-text-2);
+    font-size: 0.98rem;
+    line-height: 1.45;
+    margin: 0 0 1.4em;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.arcHero-actions { display: flex; gap: 0.7em; }
+.arcHero-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    border: 0;
+    border-radius: var(--arc-radius);
+    padding: 0.78em 1.5em;
+    font: 600 0.98rem/1 var(--arc-font);
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    transition: transform 0.12s var(--arc-ease), background-color 0.2s var(--arc-ease);
+}
+.arcHero-button:active { transform: scale(0.97); }
+.arcHero-button-primary { background: var(--arc-accent); color: var(--arc-on-accent); }
+.arcHero-button-primary:hover { background: #fff; }
+.arcHero-button-secondary {
+    background: rgba(255, 255, 255, 0.16);
+    color: var(--arc-text);
+    -webkit-backdrop-filter: var(--arc-blur);
+    backdrop-filter: var(--arc-blur);
+}
+.arcHero-button-secondary:hover { background: rgba(255, 255, 255, 0.26); }
+.arcHero-button .material-icons { font-size: 1.25em; }
+.arcHero-dots {
+    position: absolute;
+    right: clamp(20px, 3vw, 40px);
+    bottom: clamp(24px, 4vh, 44px);
+    display: flex;
+    gap: 7px;
+}
+.arcHero-dot {
+    width: 7px;
+    height: 7px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+    transition: width 0.3s var(--arc-ease), background-color 0.3s var(--arc-ease);
+}
+.arcHero-dot.is-active { width: 22px; border-radius: 4px; background: var(--arc-text); }
+
+@media (max-width: 700px) {
+    .arcHero-content { max-width: none; right: 24px; }
+    .arcHero-overview { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .arcHero-slide,
+    .cardScalable { transition: opacity 0.2s linear; transform: none !important; }
 }

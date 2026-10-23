@@ -2,16 +2,16 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Jellyfin</title>
+    <title>Arc</title>
     <link rel="stylesheet" href="find-webclient.css">
 </head>
 <body>
     <div id="container">
-        <img class="logo" src="logo.png">
+        <div class="wordmark" aria-label="Arc">Arc</div>
         <form id="connect-form">
             <h1 id="title"></h1>
             <div id="spinner"></div>
-            <input type="text" id="address" autofocus>
+            <input type="text" id="address" autofocus spellcheck="false" autocomplete="off">
             <button id="connect-button" type="submit"></button>
         </form>
     </div>
