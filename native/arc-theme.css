@@ -373,32 +373,43 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
 .videoOsdBottom .paper-icon-button-light,
 .osdHeader .headerBackButton { filter: drop-shadow(0 1px 6px rgba(0, 0, 0, 0.6)); }
 
-/* Only previous, play/pause and next (plus volume) remain. */
+/* Kept: previous, play/pause, next on the left; audio track (only when there is more
+   than one, jellyfin-web toggles it), subtitles (only when there are any), volume and
+   fullscreen on the right. Everything else is hidden. */
 .videoOsdBottom .btnPreviousChapter,
 .videoOsdBottom .btnNextChapter,
 .videoOsdBottom .btnRewind,
 .videoOsdBottom .btnFastForward,
-.videoOsdBottom .btnAudio,
-.videoOsdBottom .btnSubtitles,
 .videoOsdBottom .btnVideoOsdSettings,
 .videoOsdBottom .btnPip,
 .videoOsdBottom .btnAirPlay,
-.videoOsdBottom .btnFullscreen,
 .videoOsdBottom .btnUserRating,
 .videoOsdBottom .btnRecord,
 .videoOsdBottom .endsAtText { display: none !important; }
 
-/* Volume: the icon stays; its slider fades in while the volume control is hovered or
-   focused, and stays while it is being dragged. Hidden with opacity rather than size
-   so the value bubble above the slider is never clipped. */
+/* Even spacing across the control row. */
+.videoOsdBottom .buttons { gap: 0.45em; }
+.videoOsdBottom .buttons .paper-icon-button-light,
+.videoOsdBottom .volumeButtons { margin: 0 !important; }
+
+/* Volume: the icon stays; its slider takes no space until the volume control is
+   hovered or focused, then opens to the left of the icon (order: -1) so the icon under
+   the pointer does not move. No overflow clipping, so the value above the slider shows. */
 .videoOsdBottom .osdVolumeSliderContainer {
+    order: -1;
+    flex-grow: 0 !important;
+    width: 0 !important;
+    margin-right: 0;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.2s var(--arc-ease), visibility 0.2s var(--arc-ease);
+    transition: width 0.22s var(--arc-ease), margin 0.22s var(--arc-ease),
+                opacity 0.18s var(--arc-ease), visibility 0.22s var(--arc-ease);
 }
 .videoOsdBottom .volumeButtons:hover .osdVolumeSliderContainer,
 .videoOsdBottom .volumeButtons:focus-within .osdVolumeSliderContainer,
 .videoOsdBottom .osdVolumeSliderContainer:active {
+    width: 8.5em !important;
+    margin-right: 0.35em;
     opacity: 1;
     visibility: visible;
 }
