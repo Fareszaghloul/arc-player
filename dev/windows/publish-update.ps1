@@ -13,10 +13,11 @@ Upload both files so that:
   - arc-update.json is reachable at the feed URL baked into Arc
     (CMake -DARC_UPDATE_FEED_URL=...).
 
-With GitHub Releases on your own repository, a stable feed URL is
-  https://github.com/<owner>/<repo>/releases/latest/download/arc-update.json
-and the download base for a release tagged v0.2.0 is
-  https://github.com/<owner>/<repo>/releases/download/v0.2.0
+Arc's builds read the feed from (CMakeModules/VersionConfiguration.cmake)
+  https://github.com/Fareszaghloul/arc-player/releases/latest/download/arc-update.json
+so attach arc-update.json to each GitHub release. The download base for a
+release tagged v0.2.0 is
+  https://github.com/Fareszaghloul/arc-player/releases/download/v0.2.0
 
 Bump VERSION before each release: Arc only offers versions newer than its own.
 

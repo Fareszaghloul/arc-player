@@ -3,10 +3,13 @@ string(TIMESTAMP CURRENT_DATE "%Y-%m-%d")
 
 option(UPGRADE_DEBUG "" OFF)
 
-# Where Arc's in-app updater looks for new versions: the arc-update.json written by
-# dev/windows/publish-update.ps1. Empty disables update checks unless the hidden
-# main.updateFeedUrl setting provides one.
-set(ARC_UPDATE_FEED_URL "" CACHE STRING "URL of the arc-update.json update feed")
+# Where Arc's in-app updater looks for new versions: the arc-update.json that
+# dev/windows/publish-update.ps1 writes, attached to each GitHub release. The
+# "latest/download" URL always resolves to the newest published release. Set it
+# empty to build without update checks; the hidden main.updateFeedUrl setting
+# overrides it at runtime for testing.
+set(ARC_UPDATE_FEED_URL "https://github.com/Fareszaghloul/arc-player/releases/latest/download/arc-update.json"
+    CACHE STRING "URL of the arc-update.json update feed")
 
 # Read version from VERSION file
 file(READ "${CMAKE_SOURCE_DIR}/VERSION" VERSION_STRING)
