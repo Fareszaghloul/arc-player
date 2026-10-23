@@ -64,6 +64,19 @@ textarea,
 
 html { color: var(--arc-text-2); }
 
+/* During video playback mpv draws behind the web view, and jellyfin-web marks the
+   document .transparentDocument so the picture shows through. Its own rule only clears
+   html and .backgroundContainer, so every surface this theme paints must go clear too,
+   or the video is hidden behind black. */
+.transparentDocument body,
+.transparentDocument .skinBody,
+.transparentDocument .mainAnimatedPages,
+.transparentDocument .page,
+.transparentDocument .backgroundContainer {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
 h1, h2, h3, .sectionTitle, .pageTitle, .itemName {
     color: var(--arc-text);
     letter-spacing: -0.02em;
