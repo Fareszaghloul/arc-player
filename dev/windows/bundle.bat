@@ -32,6 +32,9 @@ set "PATH=%PATH%;C:\Program Files\Git\cmd"
 cd /d "%BUILD_DIR%"
 
 REM === Package ===
+REM The installer and ZIP rules only track the .iss file, not the staged app files,
+REM so remove old packages to force both to be rebuilt from the current build.
+del /q Arc-*.exe Arc-*.zip 2>nul
 echo Creating installer and portable ZIP...
 ninja windows_all
 if errorlevel 1 (
