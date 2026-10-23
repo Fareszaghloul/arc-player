@@ -1,21 +1,31 @@
-// Arc home screen: a rotating hero banner above the server's home sections.
+// Arc home screen, in the style of Apple's TV app.
 //
 // Concatenated after arcTheme.js by SystemComponent::getNativeShellScript(). It
-// watches the DOM for jellyfin-web's .homeSectionsContainer and inserts one
-// .arcHero at its top, featuring the newest movies and series that have backdrop
-// art. Styling lives in native/arc-theme.css, so the hero is only shown while the
-// Arc theme is applied (see the "arcthemechange" event from arcTheme.js).
+// watches the DOM for jellyfin-web's .homeSectionsContainer and reshapes it:
 //
-// Play and Details use jellyfin-web's own item actions: the buttons sit inside an
-// emby-itemscontainer element and carry data-action="resume" / "link", with the
-// item's data-id, data-serverid and data-type on their parent, exactly like the
-// action buttons on a library card.
+//   1. A full-bleed hero that runs edge to edge under the translucent header. It
+//      leads with what the user is partway through ("Continue Watching", with time
+//      left), then the newest movies and series, rotating every 8 seconds.
+//   2. A row of library pills (Movies, Shows, ...) directly under the hero.
+//   3. Only two kinds of server sections stay visible: Continue Watching and the
+//      per-library "Recently Added" rows. My Media tiles, Next Up, audio/book
+//      resume rows and Live TV are hidden (data-arc-section="other").
+//
+// Styling lives in native/arc-theme.css, so all of this only applies while the Arc
+// theme is on (see the "arcthemechange" event from arcTheme.js); with it off, the
+// server's own home page is shown untouched.
+//
+// Play, Details and the library pills use jellyfin-web's own item actions: they
+// sit inside an is="emby-itemscontainer" element and carry data-action plus the
+// item's data-id / data-serverid / data-type, exactly like library card buttons.
 (function() {
     const ROTATE_MS = 8000;
     const CACHE_MS = 5 * 60 * 1000;
-    const MAX_ITEMS = 6;
+    const MAX_SLIDES = 6;
+    const MAX_RESUME_SLIDES = 2;
+    const TICKS_PER_MINUTE = 600000000;
 
-    let cache = { userId: null, at: 0, items: null, pending: null };
+    let cache = { userId: null, at: 0, data: null, pending: null };
     let rotateTimer = null;
     let scheduled = false;
 
@@ -25,53 +35,142 @@
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[c]));
 
-    async function featuredItems(apiClient) {
+    // ------------------------------------------------------------------ data
+
+    const ITEM_FIELDS = 'Overview,Genres,ProductionYear,OfficialRating,PrimaryImageAspectRatio';
+
+    // Backdrop and logo for an item; episodes borrow their series' artwork.
+    function artwork(apiClient, item) {
+        let backdrop = null;
+        if (item.BackdropImageTags && item.BackdropImageTags.length) {
+            backdrop = { id: item.Id, tag: item.BackdropImageTags[0] };
+        } else if (item.ParentBackdropItemId && item.ParentBackdropImageTags && item.ParentBackdropImageTags.length) {
+            backdrop = { id: item.ParentBackdropItemId, tag: item.ParentBackdropImageTags[0] };
+        }
+        let logo = null;
+        if (item.ImageTags && item.ImageTags.Logo) {
+            logo = { id: item.Id, tag: item.ImageTags.Logo };
+        } else if (item.ParentLogoItemId && item.ParentLogoImageTag) {
+            logo = { id: item.ParentLogoItemId, tag: item.ParentLogoImageTag };
+        }
+        return {
+            backdrop: backdrop && apiClient.getScaledImageUrl(backdrop.id, { type: 'Backdrop', index: 0, tag: backdrop.tag, maxWidth: 2400, quality: 90 }),
+            logo: logo && apiClient.getScaledImageUrl(logo.id, { type: 'Logo', tag: logo.tag, maxWidth: 800 })
+        };
+    }
+
+    async function loadHome(apiClient) {
         const userId = apiClient.getCurrentUserId();
-        const fresh = cache.items && cache.userId === userId && Date.now() - cache.at < CACHE_MS;
-        if (fresh) return cache.items;
+        const fresh = cache.data && cache.userId === userId && Date.now() - cache.at < CACHE_MS;
+        if (fresh) return cache.data;
         if (cache.pending && cache.userId === userId) return cache.pending;
 
         cache.userId = userId;
-        cache.pending = apiClient.getItems(userId, {
-            IncludeItemTypes: 'Movie,Series',
-            Recursive: true,
-            SortBy: 'DateCreated',
-            SortOrder: 'Descending',
-            ImageTypes: 'Backdrop',
-            Fields: 'Overview,Genres,ProductionYear,OfficialRating',
-            EnableUserData: true,
-            Limit: MAX_ITEMS
-        }).then((result) => {
-            cache.items = (result && result.Items) || [];
+        cache.pending = Promise.all([
+            apiClient.getResumableItems(userId, {
+                MediaTypes: 'Video',
+                Limit: MAX_RESUME_SLIDES + 2,
+                Recursive: true,
+                Fields: ITEM_FIELDS,
+                EnableImageTypes: 'Primary,Backdrop,Thumb,Logo',
+                ImageTypeLimit: 1,
+                EnableTotalRecordCount: false
+            }).catch((e) => {
+                console.warn('Arc home: could not load resumable items', e);
+                return { Items: [] };
+            }),
+            apiClient.getItems(userId, {
+                IncludeItemTypes: 'Movie,Series',
+                Recursive: true,
+                SortBy: 'DateCreated',
+                SortOrder: 'Descending',
+                ImageTypes: 'Backdrop',
+                Fields: ITEM_FIELDS,
+                EnableUserData: true,
+                Limit: MAX_SLIDES
+            }),
+            apiClient.getUserViews({}, userId).catch((e) => {
+                console.warn('Arc home: could not load libraries', e);
+                return { Items: [] };
+            })
+        ]).then(([resume, latest, views]) => {
+            const slides = [];
+            const seen = new Set();
+            for (const item of (resume && resume.Items) || []) {
+                if (slides.length >= MAX_RESUME_SLIDES) break;
+                const key = item.SeriesId || item.Id;
+                if (seen.has(key) || !artwork(apiClient, item).backdrop) continue;
+                seen.add(key);
+                slides.push({ item, resume: true });
+            }
+            for (const item of (latest && latest.Items) || []) {
+                if (slides.length >= MAX_SLIDES) break;
+                if (seen.has(item.Id) || !artwork(apiClient, item).backdrop) continue;
+                seen.add(item.Id);
+                slides.push({ item, resume: false });
+            }
+            cache.data = { slides, libraries: (views && views.Items) || [] };
             cache.at = Date.now();
-            return cache.items;
+            return cache.data;
         }).finally(() => {
             cache.pending = null;
         });
         return cache.pending;
     }
 
-    function slideHtml(apiClient, item, index) {
-        const tag = item.BackdropImageTags && item.BackdropImageTags[0];
-        const url = apiClient.getScaledImageUrl(item.Id, { type: 'Backdrop', index: 0, tag, maxWidth: 1920, quality: 90 });
-        return `<div class="arcHero-slide${index === 0 ? ' is-active' : ''}" style="background-image:url('${encodeURI(url)}')"></div>`;
+    // -------------------------------------------------------------- markup
+
+    function minutesLeft(item) {
+        const total = item.RunTimeTicks || 0;
+        const position = (item.UserData && item.UserData.PlaybackPositionTicks) || 0;
+        if (!total || position >= total) return null;
+        return Math.max(1, Math.round((total - position) / TICKS_PER_MINUTE));
     }
 
-    function contentHtml(apiClient, item) {
-        const logoTag = item.ImageTags && item.ImageTags.Logo;
-        const heading = logoTag
-            ? `<img class="arcHero-logo" alt="${escapeHtml(item.Name)}" src="${encodeURI(apiClient.getScaledImageUrl(item.Id, { type: 'Logo', tag: logoTag, maxWidth: 700 }))}">`
-            : `<h1 class="arcHero-title">${escapeHtml(item.Name)}</h1>`;
-        const meta = [item.ProductionYear, item.OfficialRating, ...(item.Genres || []).slice(0, 2)]
-            .filter(Boolean).map(escapeHtml).join(' &middot; ');
-        const resumable = item.UserData && item.UserData.PlaybackPositionTicks > 0;
-        const playLabel = resumable ? 'Resume' : 'Play';
-        const kind = item.Type === 'Series' ? 'New series' : 'New movie';
+    function formatMinutes(minutes) {
+        if (minutes < 60) return `${minutes} min`;
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return m ? `${h} hr ${m} min` : `${h} hr`;
+    }
+
+    function eyebrow(slide) {
+        if (slide.resume) return 'Continue Watching';
+        return slide.item.Type === 'Series' ? 'New Series' : 'New Movie';
+    }
+
+    function contentHtml(apiClient, slide) {
+        const item = slide.item;
+        const art = artwork(apiClient, item);
+        const isEpisode = item.Type === 'Episode';
+        const titleText = isEpisode ? (item.SeriesName || item.Name) : item.Name;
+        const heading = art.logo
+            ? `<img class="arcHero-logo" alt="${escapeHtml(titleText)}" src="${encodeURI(art.logo)}">`
+            : `<h1 class="arcHero-title">${escapeHtml(titleText)}</h1>`;
+
+        let meta;
+        if (isEpisode) {
+            const number = [item.ParentIndexNumber != null ? `S${item.ParentIndexNumber}` : null,
+                            item.IndexNumber != null ? `E${item.IndexNumber}` : null].filter(Boolean).join(' · ');
+            meta = [number, item.Name].filter(Boolean).map(escapeHtml).join(' &middot; ');
+        } else {
+            meta = [item.ProductionYear, item.OfficialRating, ...(item.Genres || []).slice(0, 2)]
+                .filter(Boolean).map(escapeHtml).join(' &middot; ');
+        }
+
+        const position = (item.UserData && item.UserData.PlaybackPositionTicks) || 0;
+        const resumable = position > 0;
+        const left = resumable ? minutesLeft(item) : null;
+        const percent = resumable && item.UserData.PlayedPercentage ? Math.min(100, Math.max(2, item.UserData.PlayedPercentage)) : 0;
+        const progress = resumable
+            ? `<div class="arcHero-progress"><div class="arcHero-progressBar"><div style="width:${percent.toFixed(1)}%"></div></div>${left ? `<span>${formatMinutes(left)} left</span>` : ''}</div>`
+            : '';
 
         return `
-            <p class="arcHero-eyebrow">${kind}</p>
+            <p class="arcHero-eyebrow">${eyebrow(slide)}</p>
             ${heading}
             ${meta ? `<p class="arcHero-meta">${meta}</p>` : ''}
+            ${progress}
             ${item.Overview ? `<p class="arcHero-overview">${escapeHtml(item.Overview)}</p>` : ''}
             <div class="arcHero-actions"
                  data-id="${escapeHtml(item.Id)}"
@@ -79,9 +178,9 @@
                  data-type="${escapeHtml(item.Type)}"
                  data-mediatype="${escapeHtml(item.MediaType || '')}"
                  data-isfolder="${item.IsFolder ? 'true' : 'false'}"
-                 data-positionticks="${resumable ? item.UserData.PlaybackPositionTicks : 0}">
+                 data-positionticks="${position}">
                 <button type="button" class="arcHero-button arcHero-button-primary itemAction" data-action="resume">
-                    <span class="material-icons" aria-hidden="true">play_arrow</span>${playLabel}
+                    <span class="material-icons" aria-hidden="true">play_arrow</span>${resumable ? 'Resume' : 'Play'}
                 </button>
                 <button type="button" class="arcHero-button arcHero-button-secondary itemAction" data-action="link">
                     Details
@@ -89,26 +188,73 @@
             </div>`;
     }
 
+    function librariesHtml(apiClient, libraries) {
+        return libraries.map((lib) => `
+            <button type="button" class="arcLibraries-pill itemAction" data-action="link"
+                    data-id="${escapeHtml(lib.Id)}"
+                    data-serverid="${escapeHtml(lib.ServerId || apiClient.serverId())}"
+                    data-type="${escapeHtml(lib.Type || 'CollectionFolder')}"
+                    data-collectiontype="${escapeHtml(lib.CollectionType || '')}"
+                    data-isfolder="true">${escapeHtml(lib.Name)}</button>`).join('');
+    }
+
     // jellyfin-web defines emby-itemscontainer as a customized <div>; its click
-    // handler turns our data-action buttons into real playback and navigation.
-    // Current releases register it through the document.registerElement polyfill,
-    // which upgrades any element carrying is="emby-itemscontainer" once it is in
-    // the document; a native customElements registration is used when present.
-    // Without either, the buttons fall back to opening the details page.
-    function createActionHost() {
-        let host = null;
+    // handler turns data-action buttons into real playback and navigation. Current
+    // releases register it through the document.registerElement polyfill, which
+    // upgrades any element carrying is="emby-itemscontainer" once it is in the
+    // document; a native customElements registration is used when present. Without
+    // either, clicks fall back to the details page (see onFallbackClick).
+    function createActionHost(className) {
+        let host;
         if (customElements.get('emby-itemscontainer')) {
             host = document.createElement('div', { is: 'emby-itemscontainer' });
-        } else if (typeof document.registerElement === 'function') {
+        } else {
             host = document.createElement('div');
-            host.setAttribute('is', 'emby-itemscontainer');
+            if (typeof document.registerElement === 'function') {
+                host.setAttribute('is', 'emby-itemscontainer');
+            } else {
+                host.addEventListener('click', onFallbackClick);
+            }
         }
-        if (host) {
-            host.setAttribute('data-multiselect', 'false');
-            host.setAttribute('data-contextmenu', 'false');
-        }
+        host.setAttribute('data-multiselect', 'false');
+        host.setAttribute('data-contextmenu', 'false');
+        host.className = className;
         return host;
     }
+
+    function onFallbackClick(e) {
+        const action = e.target.closest('[data-action]');
+        if (!action) return;
+        const target = action.closest('[data-id]');
+        window.location.hash = `#/details?id=${encodeURIComponent(target.getAttribute('data-id'))}` +
+            `&serverId=${encodeURIComponent(target.getAttribute('data-serverid'))}`;
+    }
+
+    // ------------------------------------------------------ section filtering
+
+    // Tag each server section so arc-theme.css can keep Continue Watching and the
+    // per-library "Recently Added" rows and hide the rest.
+    function classifySections(container) {
+        for (const section of container.children) {
+            // Our own elements, and jellyfin-web's latest-media wrapper, which is a plain
+            // <div class="sectionN"> holding one .verticalSection per library.
+            if (section.classList.contains('arcHero') || section.classList.contains('arcLibraries')) continue;
+            let kind = 'other';
+            if (section.querySelector(':scope > .verticalSection')) {
+                kind = 'latest'; // the latest-media section nests one section per library
+            } else {
+                const items = section.querySelector('.itemsContainer');
+                const monitor = (items && items.getAttribute('data-monitor')) || '';
+                const linkedTitle = section.querySelector('.sectionTitleTextButton');
+                if (monitor.includes('videoplayback') && !linkedTitle) kind = 'resume';
+            }
+            if (section.getAttribute('data-arc-section') !== kind) {
+                section.setAttribute('data-arc-section', kind);
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------- hero
 
     function stopRotation() {
         if (rotateTimer) {
@@ -117,59 +263,82 @@
         }
     }
 
-    function render(container, apiClient, items) {
-        if (!items.length || !container.isConnected) return;
-        container.querySelectorAll('.arcHero').forEach((el) => el.remove());
+    // Stretch the hero to the window edges and up under the fixed header.
+    function bleed(hero) {
+        if (!hero.isConnected) return;
+        hero.style.marginTop = '0px';
+        hero.style.marginLeft = '0px';
+        const rect = hero.getBoundingClientRect();
+        hero.style.marginTop = `${-(rect.top + window.scrollY)}px`;
+        hero.style.marginLeft = `${-rect.left}px`;
+        hero.style.width = `${document.documentElement.clientWidth}px`;
+        updateHeader();
+    }
+
+    // Over the hero, the header turns into a soft gradient; past it, the usual
+    // translucent bar returns.
+    function updateHeader() {
+        const hero = document.querySelector('.homePage:not(.hide) .arcHero');
+        const header = document.querySelector('.skinHeader');
+        let over = false;
+        if (hero && hero.isConnected && header && themeOn()) {
+            over = hero.getBoundingClientRect().bottom > header.offsetHeight + 1;
+        }
+        document.documentElement.classList.toggle('arc-header-over-hero', over);
+    }
+
+    function render(container, apiClient, data) {
+        container.querySelectorAll(':scope > .arcHero, :scope > .arcLibraries').forEach((el) => el.remove());
         stopRotation();
+
+        if (data.libraries.length) {
+            container.prepend(createActionHost('arcLibraries'));
+            container.querySelector(':scope > .arcLibraries').innerHTML = librariesHtml(apiClient, data.libraries);
+        }
+
+        const slides = data.slides;
+        if (!slides.length) {
+            updateHeader();
+            return;
+        }
 
         const hero = document.createElement('section');
         hero.className = 'arcHero';
         hero.setAttribute('aria-roledescription', 'carousel');
-        hero.innerHTML = items.map((item, i) => slideHtml(apiClient, item, i)).join('') +
-            '<div class="arcHero-scrim"></div>';
+        hero.innerHTML = slides.map((slide, i) =>
+            `<div class="arcHero-slide${i === 0 ? ' is-active' : ''}" style="background-image:url('${encodeURI(artwork(apiClient, slide.item).backdrop)}')"></div>`
+        ).join('') + '<div class="arcHero-scrim"></div>';
 
-        const host = createActionHost();
-        const content = host || document.createElement('div');
-        content.classList.add('arcHero-content');
-        content.innerHTML = contentHtml(apiClient, items[0]);
+        const content = createActionHost('arcHero-content');
+        content.innerHTML = contentHtml(apiClient, slides[0]);
         hero.appendChild(content);
 
-        if (items.length > 1) {
+        if (slides.length > 1) {
             const dots = document.createElement('div');
             dots.className = 'arcHero-dots';
-            dots.innerHTML = items.map((item, i) =>
-                `<button type="button" class="arcHero-dot${i === 0 ? ' is-active' : ''}" aria-label="${escapeHtml(item.Name)}"></button>`
+            dots.innerHTML = slides.map((slide, i) =>
+                `<button type="button" class="arcHero-dot${i === 0 ? ' is-active' : ''}" aria-label="${escapeHtml(slide.item.SeriesName || slide.item.Name)}"></button>`
             ).join('');
             hero.appendChild(dots);
         }
 
         let current = 0;
         const show = (index) => {
-            current = (index + items.length) % items.length;
+            current = (index + slides.length) % slides.length;
             hero.querySelectorAll('.arcHero-slide').forEach((el, i) => el.classList.toggle('is-active', i === current));
             hero.querySelectorAll('.arcHero-dot').forEach((el, i) => el.classList.toggle('is-active', i === current));
-            content.innerHTML = contentHtml(apiClient, items[current]);
+            content.innerHTML = contentHtml(apiClient, slides[current]);
         };
 
         hero.addEventListener('click', (e) => {
             const dot = e.target.closest('.arcHero-dot');
-            if (dot) {
-                show([...dot.parentNode.children].indexOf(dot));
-                return;
-            }
-            if (!host) {
-                const action = e.target.closest('[data-action]');
-                if (action) {
-                    const id = action.closest('[data-id]').getAttribute('data-id');
-                    window.location.hash = `#/details?id=${encodeURIComponent(id)}&serverId=${encodeURIComponent(apiClient.serverId())}`;
-                }
-            }
+            if (dot) show([...dot.parentNode.children].indexOf(dot));
         });
 
         const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const start = () => {
             stopRotation();
-            if (items.length > 1 && !reducedMotion) {
+            if (slides.length > 1 && !reducedMotion) {
                 rotateTimer = setInterval(() => {
                     if (!hero.isConnected) {
                         stopRotation();
@@ -184,38 +353,51 @@
         hero.addEventListener('focusin', stopRotation);
 
         container.prepend(hero);
+        bleed(hero);
         start();
     }
 
-    async function ensureHero() {
+    // ------------------------------------------------------------- lifecycle
+
+    async function ensureHome() {
         scheduled = false;
         const container = document.querySelector('.homePage:not(.hide) .homeSectionsContainer');
-        if (!container || !themeOn()) return;
-        if (container.querySelector(':scope > .arcHero')) return;
-        if (container.hasAttribute('data-arc-hero')) return;
+        if (!container || !themeOn()) {
+            updateHeader();
+            return;
+        }
+        classifySections(container);
+
+        const hero = container.querySelector(':scope > .arcHero');
+        if (hero) {
+            if (hero.style.width !== `${document.documentElement.clientWidth}px`) bleed(hero);
+            return;
+        }
+        if (container.querySelector(':scope > .arcLibraries')) return; // rendered without slides
+        if (container.hasAttribute('data-arc-home')) return; // already loading
 
         const apiClient = window.ApiClient;
         if (!apiClient || !apiClient.getCurrentUserId || !apiClient.getCurrentUserId()) return;
 
-        container.setAttribute('data-arc-hero', 'loading');
+        container.setAttribute('data-arc-home', 'loading');
         try {
-            const items = await featuredItems(apiClient);
-            if (themeOn() && !container.querySelector(':scope > .arcHero')) {
-                render(container, apiClient, items);
+            const data = await loadHome(apiClient);
+            if (themeOn() && container.isConnected && !container.querySelector(':scope > .arcHero, :scope > .arcLibraries')) {
+                render(container, apiClient, data);
             }
         } catch (e) {
-            console.error('Arc home: failed to load featured items', e);
+            console.error('Arc home: failed to build the home screen', e);
         } finally {
-            container.removeAttribute('data-arc-hero');
+            container.removeAttribute('data-arc-home');
         }
     }
 
     // jellyfin-web rebuilds the home sections on every visit and refresh, which
-    // drops the hero; re-insert it on the next frame after any DOM change.
+    // drops the hero; rebuild on the next frame after any DOM change.
     const schedule = () => {
         if (scheduled) return;
         scheduled = true;
-        requestAnimationFrame(ensureHero);
+        requestAnimationFrame(ensureHome);
     };
 
     const startObserving = () => {
@@ -229,12 +411,21 @@
         document.addEventListener('DOMContentLoaded', startObserving, { once: true });
     }
 
+    window.addEventListener('scroll', updateHeader, { passive: true });
+    window.addEventListener('resize', () => {
+        const hero = document.querySelector('.homePage:not(.hide) .arcHero');
+        if (hero) bleed(hero);
+    });
+    window.addEventListener('hashchange', () => requestAnimationFrame(updateHeader));
+
     window.addEventListener('arcthemechange', (e) => {
         if (e.detail && e.detail.applied) {
             schedule();
         } else {
             stopRotation();
-            document.querySelectorAll('.arcHero').forEach((el) => el.remove());
+            document.querySelectorAll('.arcHero, .arcLibraries').forEach((el) => el.remove());
+            document.querySelectorAll('[data-arc-section]').forEach((el) => el.removeAttribute('data-arc-section'));
+            updateHeader();
         }
     });
 })();

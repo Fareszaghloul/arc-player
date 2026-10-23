@@ -44,6 +44,14 @@ body {
     animation: rise 0.7s var(--ease) both;
 }
 
+.mark {
+    width: 104px;
+    height: 104px;
+    margin-bottom: 22px;
+    filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.6));
+    user-select: none;
+}
+
 .wordmark {
     font-size: 88px;
     font-weight: 700;

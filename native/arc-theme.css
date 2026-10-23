@@ -30,6 +30,7 @@
     --arc-radius-lg: 20px;
     --arc-blur: saturate(180%) blur(24px);
     --arc-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+    --arc-glyph: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%22196 196 632 632%22 width=%22632%22 height=%22632%22%3E%3Ctitle%3EArc%3C/title%3E%3Cpath d=%22M 262 762 L 262 512 A 250 250 0 0 1 762 512 L 762 762%22 fill=%22none%22 stroke=%22%23f5f5f7%22 stroke-width=%22132%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E");
     --arc-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
                 "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI",
                 "Helvetica Neue", Inter, system-ui, sans-serif;
@@ -92,12 +93,19 @@ h1, h2, h3, .sectionTitle, .pageTitle, .itemName {
     box-shadow: none;
 }
 
-/* The Jellyfin banner image becomes a typographic "Arc" wordmark. */
+/* The Jellyfin banner image becomes the Arc arch and wordmark. */
 .pageTitleWithDefaultLogo {
     background-image: none !important;
     width: auto !important;
     display: inline-flex;
     align-items: center;
+    gap: 0.42em;
+}
+.pageTitleWithDefaultLogo::before {
+    content: "";
+    width: 1.3rem;
+    height: 1.3rem;
+    background: var(--arc-glyph) center / contain no-repeat;
 }
 .pageTitleWithDefaultLogo::after {
     content: "Arc";
@@ -109,6 +117,13 @@ h1, h2, h3, .sectionTitle, .pageTitle, .itemName {
 .headerTabs .emby-tab-button { color: var(--arc-text-3); font-weight: 600; }
 .headerTabs .emby-tab-button-active,
 .emby-tab-button-active { color: var(--arc-text); }
+
+/* The loading splash shows the arch instead of the Jellyfin logo. */
+.splashLogo {
+    background-image: var(--arc-glyph) !important;
+    width: 96px !important;
+    height: 96px !important;
+}
 
 /* ------------------------------------------------------- side navigation */
 
@@ -304,7 +319,14 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
 .dialog.dialog-fullscreen { border-radius: 0; }
 .formDialogHeader { background: transparent; border-bottom: 1px solid var(--arc-hairline); }
 
-/* ------------------------------------------------------------ home screen */
+/* ------------------------------------------------------------ home screen
+ *
+ * Built with native/arcHome.js: a full-bleed hero under the header, library
+ * pills, then only Continue Watching and the per-library "Recently Added" rows.
+ */
+
+/* Server sections other than Continue Watching and Recently Added stay hidden. */
+.homePage .homeSectionsContainer > [data-arc-section="other"] { display: none !important; }
 
 .homePage .sectionTitle,
 .homePage .sectionTitle-cards {
@@ -313,7 +335,7 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
     letter-spacing: -0.025em;
 }
 .homePage .sectionTitleContainer { margin-bottom: 0.4em; }
-.homePage .verticalSection { margin-bottom: 1.6em; }
+.homePage .verticalSection { margin-bottom: 1.4em; }
 .homePage .sectionTitleContainer .sectionTitleTextButton { color: var(--arc-text); }
 
 /* Captions sit left-aligned under the artwork, as in Apple's TV and Music apps. */
@@ -323,71 +345,99 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
 .homePage .cardTextCentered > .textActionButton { text-align: left !important; }
 .homePage .cardFooter { padding-left: 2px; padding-right: 2px; }
 
-/* "My Media" library tiles */
-.homePage .section0 .card .cardText { color: var(--arc-text); font-weight: 600; }
+/* Header: a soft gradient while it sits over the hero, the usual bar after. */
+.arc-header-over-hero .skinHeader,
+.arc-header-over-hero .skinHeader-withBackground {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 100%) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    border-bottom-color: transparent;
+}
+.skinHeader { transition: background-color 0.3s var(--arc-ease), border-color 0.3s var(--arc-ease); }
 
-/* Hero banner built by native/arcHome.js */
+/* Hero (arcHome.js sets its negative margins and width to reach the window edges) */
 .arcHero {
     position: relative;
-    height: clamp(320px, 52vh, 620px);
-    margin: 0 3.3% 2.2em;
-    border-radius: var(--arc-radius-lg);
+    height: clamp(460px, 74vh, 860px);
+    margin-bottom: 1.2em;
     overflow: hidden;
-    background: var(--arc-surface);
+    background: var(--arc-bg);
     isolation: isolate;
 }
 .arcHero-slide {
     position: absolute;
     inset: 0;
     background-size: cover;
-    background-position: center 25%;
+    background-position: center 20%;
     opacity: 0;
     transform: scale(1.04);
-    transition: opacity 1s var(--arc-ease), transform 7s linear;
+    transition: opacity 1.1s var(--arc-ease), transform 8s linear;
 }
 .arcHero-slide.is-active { opacity: 1; transform: scale(1); }
 .arcHero-scrim {
     position: absolute;
     inset: 0;
-    background:
-        linear-gradient(90deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.45) 42%, rgba(0, 0, 0, 0) 70%),
-        linear-gradient(0deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 45%);
     pointer-events: none;
+    background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.4) 38%, rgba(0, 0, 0, 0) 64%),
+        linear-gradient(0deg, var(--arc-bg) 0%, rgba(0, 0, 0, 0.55) 22%, rgba(0, 0, 0, 0) 52%);
 }
-.arcHero-content {
+.arcHero-content,
+.arcHero-content.itemsContainer {
+    /* jellyfin-web adds .itemsContainer (display: flex; margin: 0 auto) when it upgrades
+       this element into an emby-itemscontainer; the hero text must stay stacked. */
+    display: block;
+    margin: 0;
     position: absolute;
-    left: clamp(24px, 4vw, 56px);
-    bottom: clamp(28px, 5vh, 56px);
-    max-width: min(520px, 46%);
+    left: 3.3vw;
+    bottom: clamp(56px, 11vh, 120px);
+    width: min(560px, 44vw);
     color: var(--arc-text);
 }
 .arcHero-eyebrow {
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--arc-text-2);
-    margin: 0 0 0.7em;
+    margin: 0 0 0.8em;
 }
 .arcHero-logo {
     display: block;
     max-width: 100%;
-    max-height: 120px;
-    margin-bottom: 0.7em;
+    max-height: 140px;
+    margin-bottom: 0.8em;
     object-fit: contain;
     object-position: left bottom;
+    filter: drop-shadow(0 4px 24px rgba(0, 0, 0, 0.5));
 }
 .arcHero-title {
-    font: 700 clamp(2rem, 3.6vw, 3.4rem)/1.02 var(--arc-font);
-    letter-spacing: -0.035em;
+    font: 700 clamp(2.2rem, 4vw, 3.8rem)/1.02 var(--arc-font);
+    letter-spacing: -0.04em;
     margin: 0 0 0.25em;
 }
-.arcHero-meta { color: var(--arc-text-2); font-size: 0.92rem; margin: 0 0 0.8em; }
+.arcHero-meta { color: var(--arc-text-2); font-size: 0.95rem; margin: 0 0 0.8em; }
+.arcHero-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.7em;
+    margin: -0.2em 0 1em;
+    color: var(--arc-text-2);
+    font-size: 0.85rem;
+}
+.arcHero-progressBar {
+    width: 140px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.25);
+    overflow: hidden;
+}
+.arcHero-progressBar > div { height: 100%; background: var(--arc-text); }
 .arcHero-overview {
     color: var(--arc-text-2);
-    font-size: 0.98rem;
+    font-size: 1rem;
     line-height: 1.45;
-    margin: 0 0 1.4em;
+    margin: 0 0 1.5em;
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
@@ -400,8 +450,8 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
     gap: 0.45em;
     border: 0;
     border-radius: var(--arc-radius);
-    padding: 0.78em 1.5em;
-    font: 600 0.98rem/1 var(--arc-font);
+    padding: 0.82em 1.6em;
+    font: 600 1rem/1 var(--arc-font);
     letter-spacing: -0.01em;
     cursor: pointer;
     transition: transform 0.12s var(--arc-ease), background-color 0.2s var(--arc-ease);
@@ -416,11 +466,11 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
     backdrop-filter: var(--arc-blur);
 }
 .arcHero-button-secondary:hover { background: rgba(255, 255, 255, 0.26); }
-.arcHero-button .material-icons { font-size: 1.25em; }
+.arcHero-button .material-icons { font-size: 1.3em; }
 .arcHero-dots {
     position: absolute;
-    right: clamp(20px, 3vw, 40px);
-    bottom: clamp(24px, 4vh, 44px);
+    right: 3.3vw;
+    bottom: clamp(60px, 11.5vh, 124px);
     display: flex;
     gap: 7px;
 }
@@ -436,8 +486,32 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
 }
 .arcHero-dot.is-active { width: 22px; border-radius: 4px; background: var(--arc-text); }
 
+/* Library pills under the hero */
+.arcLibraries,
+.arcLibraries.itemsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55em;
+    padding: 0 3.3vw;
+    margin: 0 0 1.6em;
+}
+.arcLibraries-pill {
+    border: 0;
+    border-radius: 999px;
+    padding: 0.62em 1.25em;
+    background: var(--arc-surface-2);
+    color: var(--arc-text);
+    font: 600 0.92rem/1 var(--arc-font);
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    transition: background-color 0.2s var(--arc-ease), transform 0.12s var(--arc-ease);
+}
+.arcLibraries-pill:hover { background: var(--arc-surface-3); }
+.arcLibraries-pill:active { transform: scale(0.96); }
+.arcLibraries-pill:focus-visible { outline: 2px solid var(--arc-text); outline-offset: 2px; }
+
 @media (max-width: 700px) {
-    .arcHero-content { max-width: none; right: 24px; }
+    .arcHero-content { width: auto; right: 24px; }
     .arcHero-overview { display: none; }
 }
 
