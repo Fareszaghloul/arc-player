@@ -602,7 +602,8 @@ QString SystemComponent::getNativeShellScript()
     ":/web-client/extension/connectivityHelper.js",
     ":/web-client/extension/nativeshell.js",
     ":/web-client/extension/arcTheme.js",
-    ":/web-client/extension/arcHome.js"
+    ":/web-client/extension/arcHome.js",
+    ":/web-client/extension/arcPlayer.js"
   };
 
   cachedScript = jmpInfoDeclaration;
