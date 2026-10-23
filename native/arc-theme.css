@@ -1,0 +1,102 @@
+/*
+ * Arc theme, applied on top of whatever theme the Jellyfin server's web client uses.
+ *
+ * native/arcTheme.js attaches this file as a constructed stylesheet in
+ * document.adoptedStyleSheets. The cascade orders adopted sheets after every
+ * <style> and <link> sheet, so a plain rule here beats a jellyfin-web rule of the
+ * same specificity no matter when the web client loads its theme. Where
+ * jellyfin-web marks a declaration !important, the override must be !important too.
+ *
+ * This first version only swaps the jellyfin-web accent (#00a4dc) for Arc's.
+ * Change the colour in one place: the custom properties on :root.
+ */
+
+:root {
+    --arc-accent: #6c4dff;
+    --arc-accent-hover: #8166ff;
+    --arc-accent-soft: rgba(108, 77, 255, 0.2);
+    --arc-accent-track: rgba(108, 77, 255, 0.5);
+}
+
+/* Bundled connect screen (native/find-webclient.html) */
+#connect-button:not(:disabled) { background: var(--arc-accent); }
+#connect-button:hover:not(:disabled) { background: var(--arc-accent-hover); }
+#address:focus { border-color: var(--arc-accent); }
+
+/* Filled accent surfaces */
+.button-submit,
+.selectionCommandsPanel,
+.emby-button.show-focus:focus,
+.emby-button.detailFloatingButton,
+.countIndicator,
+.fullSyncIndicator,
+.mediaSourceIndicator,
+.playedIndicator { background: var(--arc-accent); }
+
+.button-submit:focus { background: var(--arc-accent-hover); }
+
+.navMenuOption-selected { background: var(--arc-accent) !important; }
+
+.itemProgressBarForeground,
+.playbackProgress > div,
+.iconOsdProgressInner,
+.emby-checkbox:checked + span + .checkboxOutline,
+.listItemIcon:not(.listItemIcon-transparent),
+.alphaPickerButton-selected,
+.alphaPickerButton-tv:focus,
+.guide-date-tab-button.show-focus:focus,
+.mdl-slider-background-lower,
+.sliderMarker.watched { background-color: var(--arc-accent); }
+
+.emby-select-tv-withcolor:focus,
+.guide-channelHeaderCell:focus,
+.programCell:focus { background-color: var(--arc-accent) !important; }
+
+/* Vendor pseudo-elements get their own rules: one unknown selector drops a whole list. */
+progress::-webkit-progress-value { background-color: var(--arc-accent); }
+.mdl-slider::-webkit-slider-thumb { background: var(--arc-accent); }
+
+.mdl-switch__input:checked + .mdl-switch__label + .mdl-switch__trackContainer > .mdl-switch__thumb { background: var(--arc-accent); }
+.mdl-switch__input:checked + .mdl-switch__label + .mdl-switch__trackContainer > .mdl-switch__track { background: var(--arc-accent-track); }
+
+/* Accent borders */
+.emby-input:focus,
+.emby-textarea:focus,
+.emby-checkbox:checked + span + .checkboxOutline,
+.emby-checkbox:focus:not(:checked) + span + .checkboxOutline,
+.itemSelectionPanel,
+.progressring-spiner,
+.mdl-spinner__layer-1,
+.mdl-spinner__layer-2,
+.mdl-spinner__layer-3,
+.mdl-spinner__layer-4 { border-color: var(--arc-accent); }
+
+.emby-select-withcolor:focus,
+.card:focus .cardBox.visualCardBox,
+.card:focus .cardBox:not(.visualCardBox) .cardScalable { border-color: var(--arc-accent) !important; }
+
+/* Accent text */
+.button-link,
+.button-flat:hover,
+.inputLabelFocused,
+.selectLabelFocused,
+.textareaLabelFocused,
+.emby-tab-button:hover,
+.emby-tab-button.show-focus:focus,
+.guide-date-tab-button.emby-tab-button-active,
+.guide-date-tab-button:focus,
+.paper-icon-button-light.show-focus:focus,
+.upNextDialog-countdownText,
+.metadataSidebarIcon,
+.mdl-slider { color: var(--arc-accent); }
+
+.buttonActive,
+.button-accent-flat { color: var(--arc-accent) !important; }
+
+/* Hover halos */
+.paper-icon-button-light:hover:not(:disabled),
+.paper-icon-button-light:active:not(:disabled),
+.listItemImageButton:hover {
+    background-color: var(--arc-accent-soft);
+    color: var(--arc-accent);
+}

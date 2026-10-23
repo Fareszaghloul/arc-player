@@ -180,6 +180,12 @@
         "display_name": "Allow Browser Zoom",
         "help": "Allows zooming the web interface using Ctrl+Plus/Minus, Ctrl+Scroll, or pinch-to-zoom. Changing this setting requires an application restart for pinch-to-zoom.",
         "default": true
+      },
+      {
+        "value": "arcTheme",
+        "display_name": "Arc Theme",
+        "help": "Applies Arc's colours on top of the server's web client theme. Turn off to see the server's theme unchanged. Takes effect immediately.",
+        "default": true
       }
     ]
   },

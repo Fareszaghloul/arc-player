@@ -549,6 +549,15 @@ QString SystemComponent::getNativeShellScript()
   auto path = SettingsComponent::Get().getExtensionPath();
   qDebug() << QString("Using path for extension: %1").arg(path);
 
+  auto loadResource = [](const QString& resourcePath) -> QString {
+    QFile file(resourcePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+      qCritical() << "Failed to load" << resourcePath << "from qrc";
+      return "";
+    }
+    return QTextStream(&file).readAll();
+  };
+
   QJsonObject clientData;
   clientData.insert("deviceName", QJsonValue::fromVariant(SettingsComponent::Get().getClientName()));
   clientData.insert("version", QJsonValue::fromVariant(Version::GetVersionString()));
@@ -578,19 +587,11 @@ QString SystemComponent::getNativeShellScript()
   clientData.insert("sections", QJsonValue::fromVariant(SettingsComponent::Get().orderedSections()));
   clientData.insert("settingsDescriptions", QJsonValue::fromVariant(settingsDescriptions));
   clientData.insert("settings", QJsonValue::fromVariant(SettingsComponent::Get().allValues()));
+  clientData.insert("themeCss", loadResource(":/web-client/extension/arc-theme.css"));
 
   QString jmpInfoDeclaration = "const jmpInfo = JSON.parse(window.atob(\"" +
                                 QJsonDocument(clientData).toJson(QJsonDocument::Compact).toBase64() +
                                 "\"));\nwindow.jmpInfo = jmpInfo;\n";
-
-  auto loadScript = [](const QString& scriptPath) -> QString {
-    QFile file(scriptPath);
-    if (!file.open(QIODevice::ReadOnly)) {
-      qCritical() << "Failed to load" << scriptPath << "from qrc";
-      return "";
-    }
-    return QTextStream(&file).readAll();
-  };
 
   QStringList scriptPaths = {
     ":/qtwebchannel/qwebchannel.js",
@@ -599,12 +600,13 @@ QString SystemComponent::getNativeShellScript()
     ":/web-client/extension/inputPlugin.js",
     ":/web-client/extension/updatePlugin.js",
     ":/web-client/extension/connectivityHelper.js",
-    ":/web-client/extension/nativeshell.js"
+    ":/web-client/extension/nativeshell.js",
+    ":/web-client/extension/arcTheme.js"
   };
 
   cachedScript = jmpInfoDeclaration;
   for (const QString& scriptPath : scriptPaths) {
-    cachedScript += loadScript(scriptPath) + "\n";
+    cachedScript += loadResource(scriptPath) + "\n";
   }
 
   return cachedScript;
