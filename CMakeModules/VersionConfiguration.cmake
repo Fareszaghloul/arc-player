@@ -12,6 +12,10 @@ set(ARC_UPDATE_FEED_URL "https://github.com/Fareszaghloul/arc-player/releases/la
     CACHE STRING "URL of the arc-update.json update feed")
 
 # Read version from VERSION file
+# Re-run configure whenever VERSION changes; otherwise an existing build keeps the
+# old version, and a release whose feed says X.Y.Z would ship an app reporting an
+# older version, so installed copies would update to it over and over.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/VERSION")
 file(READ "${CMAKE_SOURCE_DIR}/VERSION" VERSION_STRING)
 string(STRIP "${VERSION_STRING}" VERSION_STRING)
 

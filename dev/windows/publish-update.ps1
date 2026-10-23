@@ -58,6 +58,13 @@ if (-not (Test-Path $installer)) {
     throw "Installer not found: $installer"
 }
 
+# The installer must carry the VERSION being published, or Arc would keep offering it.
+$iss = Join-Path $root 'build\Arc.iss'
+$built = if (Test-Path $iss) { [regex]::Match((Get-Content $iss -Raw), '#define MyAppVersion "([^"]+)"').Groups[1].Value } else { '' }
+if ($built -ne $version) {
+    throw "The build is configured for version '$built', not $version; reconfigure and rebuild before publishing"
+}
+
 $sha256 = (Get-FileHash -Path $installer -Algorithm SHA256).Hash.ToLowerInvariant()
 $size = (Get-Item $installer).Length
 
