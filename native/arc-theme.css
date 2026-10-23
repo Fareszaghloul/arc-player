@@ -350,6 +350,72 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
 .dialog.dialog-fullscreen { border-radius: 0; }
 .formDialogHeader { background: transparent; border-bottom: 1px solid var(--arc-hairline); }
 
+/* ----------------------------------------------------------- video player
+ *
+ * Minimal on-screen controls: previous, play/pause, next, the progress bar and a
+ * volume icon whose slider appears on hover. No dark bands: the header and the
+ * control bar sit straight on the picture, with a soft shadow for legibility.
+ */
+
+/* No dark bands. The generic .skinHeader rules above would otherwise paint the
+   player header as a translucent black bar. */
+.skinHeader.osdHeader,
+.skinHeader-withBackground.osdHeader {
+    background: transparent !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    border-bottom-color: transparent !important;
+}
+.videoOsdBottom { background: transparent !important; }
+
+.osdHeader,
+.videoOsdBottom { text-shadow: 0 1px 10px rgba(0, 0, 0, 0.65); }
+.videoOsdBottom .paper-icon-button-light,
+.osdHeader .headerBackButton { filter: drop-shadow(0 1px 6px rgba(0, 0, 0, 0.6)); }
+
+/* Only previous, play/pause and next (plus volume) remain. */
+.videoOsdBottom .btnPreviousChapter,
+.videoOsdBottom .btnNextChapter,
+.videoOsdBottom .btnRewind,
+.videoOsdBottom .btnFastForward,
+.videoOsdBottom .btnAudio,
+.videoOsdBottom .btnSubtitles,
+.videoOsdBottom .btnVideoOsdSettings,
+.videoOsdBottom .btnPip,
+.videoOsdBottom .btnAirPlay,
+.videoOsdBottom .btnFullscreen,
+.videoOsdBottom .btnUserRating,
+.videoOsdBottom .btnRecord,
+.videoOsdBottom .endsAtText { display: none !important; }
+
+/* Volume: the icon stays; its slider fades in while the volume control is hovered or
+   focused, and stays while it is being dragged. Hidden with opacity rather than size
+   so the value bubble above the slider is never clipped. */
+.videoOsdBottom .osdVolumeSliderContainer {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s var(--arc-ease), visibility 0.2s var(--arc-ease);
+}
+.videoOsdBottom .volumeButtons:hover .osdVolumeSliderContainer,
+.videoOsdBottom .volumeButtons:focus-within .osdVolumeSliderContainer,
+.videoOsdBottom .osdVolumeSliderContainer:active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Slider previews (the timeline timestamp while hovering or scrubbing, and the volume
+   value): just the text, no dark bubble. Chapter thumbnails, when the server has them,
+   still show. */
+.videoOsdBottom .sliderBubble {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+.videoOsdBottom .chapterThumbContainer { box-shadow: none; }
+.videoOsdBottom .sliderBubbleText {
+    font-weight: 600;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.75);
+}
+
 /* ------------------------------------------------------------ home screen
  *
  * Built with native/arcHome.js: a full-bleed hero under the header, library
