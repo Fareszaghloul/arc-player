@@ -348,12 +348,18 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
 /* Header: a soft gradient while it sits over the hero, the usual bar after. */
 .arc-header-over-hero .skinHeader,
 .arc-header-over-hero .skinHeader-withBackground {
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 100%) !important;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.35) 60%, rgba(0, 0, 0, 0) 100%) !important;
+    /* Size the gradient to the border box and never tile it: by default it is sized to
+       the padding box and repeats, painting its darkest row into the 1px bottom border. */
+    background-origin: border-box !important;
+    background-repeat: no-repeat !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
     border-bottom-color: transparent;
 }
 .skinHeader { transition: background-color 0.3s var(--arc-ease), border-color 0.3s var(--arc-ease); }
+.arc-header-over-hero .skinHeader { text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55); }
+.arc-header-over-hero .skinHeader .headerTabs .emby-tab-button:not(.emby-tab-button-active) { color: rgba(245, 245, 247, 0.72); }
 
 /* Hero (arcHome.js sets its negative margins and width to reach the window edges) */
 .arcHero {

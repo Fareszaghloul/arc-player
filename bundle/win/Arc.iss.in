@@ -47,6 +47,9 @@ LicenseFile=
 DisableDirPage=no
 DisableReadyPage=no
 CloseApplications=yes
+; Tell Windows to refresh its icon cache so taskbar pins and shortcuts show the
+; current icon after an update.
+ChangesAssociations=yes
 RestartApplications=no
 
 [Languages]

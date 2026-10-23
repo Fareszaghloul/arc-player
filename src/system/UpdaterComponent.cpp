@@ -399,6 +399,10 @@ void UpdaterComponent::startDownload(bool automatic)
   QNetworkRequest request(url);
   request.setHeader(QNetworkRequest::UserAgentHeader, SystemComponent::Get().getUserAgent());
   request.setTransferTimeout(DOWNLOAD_STALL_TIMEOUT_MS);
+  // Qt's HTTP/2 client keeps a 64 KiB receive window, which caps a download at about
+  // 64 KiB per round trip (~1.5 MB/s to GitHub) regardless of the connection. HTTP/1.1
+  // over one TCP stream uses the full bandwidth.
+  request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
 
   m_downloadReply = m_network->get(request);
   QNetworkReply* reply = m_downloadReply;

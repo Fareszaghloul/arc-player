@@ -98,6 +98,10 @@ endif()
 
 if(WIN32)
   list(APPEND RESOURCE_FILES ${CMAKE_SOURCE_DIR}/bundle/win/iconres.rc)
+  # The resource compiler's dependency scan does not see the icon the .rc includes,
+  # so without this a changed arc.ico never reaches the exe (taskbar, shortcuts).
+  set_source_files_properties(${CMAKE_SOURCE_DIR}/bundle/win/iconres.rc PROPERTIES
+    OBJECT_DEPENDS ${CMAKE_SOURCE_DIR}/bundle/win/arc.ico)
 endif()
 
 # Generate qt.conf so that dev builds find Qt plugins and QML files
