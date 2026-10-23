@@ -505,7 +505,35 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
 }
 .arcHero-dot.is-active { width: 22px; border-radius: 4px; background: var(--arc-text); }
 
-/* Library pills under the hero */
+/* Home page header: no logo, Home followed by the libraries, no Favorites. */
+.arc-on-home .pageTitleWithDefaultLogo { display: none !important; }
+.arc-on-home .headerTabs .emby-tab-button[data-index="1"] { display: none !important; }
+.arcNav,
+.arcNav.itemsContainer { display: inline-flex; margin: 0; vertical-align: middle; }
+:root:not(.arc-on-home) .arcNav { display: none !important; }
+.arcNav-tab {
+    border: 0;
+    background: transparent;
+    color: var(--arc-text-3);
+    /* Same box as jellyfin-web's .emby-tab-button so the labels line up with Home. */
+    font-family: var(--arc-font);
+    font-size: inherit;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    padding: 1.5em;
+    cursor: pointer;
+    transition: color 0.2s var(--arc-ease);
+}
+.arcNav-tab:hover,
+.arcNav-tab:focus-visible { color: var(--arc-text); outline: none; }
+.arc-header-over-hero .arcNav-tab { color: rgba(245, 245, 247, 0.72); }
+.arc-header-over-hero .arcNav-tab:hover { color: var(--arc-text); }
+
+/* The page scrolls without a visible scrollbar; inner lists keep theirs. */
+html { scrollbar-width: none; }
+
+/* Library pills under the hero (no longer rendered; kept for reference) */
 .arcLibraries,
 .arcLibraries.itemsContainer {
     display: flex;

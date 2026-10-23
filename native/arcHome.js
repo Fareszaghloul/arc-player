@@ -6,7 +6,7 @@
 //   1. A full-bleed hero that runs edge to edge under the translucent header. It
 //      leads with what the user is partway through ("Continue Watching", with time
 //      left), then the newest movies and series, rotating every 8 seconds.
-//   2. A row of library pills (Movies, Shows, ...) directly under the hero.
+//   2. Library tabs (Movies, Shows, ...) in the header next to Home, replacing Favorites.
 //   3. Only two kinds of server sections stay visible: Continue Watching and the
 //      per-library "Recently Added" rows. My Media tiles, Next Up, audio/book
 //      resume rows and Live TV are hidden (data-arc-section="other").
@@ -287,14 +287,24 @@
         document.documentElement.classList.toggle('arc-header-over-hero', over);
     }
 
-    function render(container, apiClient, data) {
-        container.querySelectorAll(':scope > .arcHero, :scope > .arcLibraries').forEach((el) => el.remove());
-        stopRotation();
+    // Library tabs in the header, right after Home. They sit inside jellyfin-web's tab
+    // bar but are not .emby-tab-button elements, so its tab switching ignores them;
+    // clicks go through our item-action host and open the library like a card would.
+    function ensureNav(apiClient, libraries) {
+        const slider = document.querySelector('.headerTabs .emby-tabs-slider');
+        if (!slider || !libraries.length) return;
+        if (slider.querySelector(':scope > .arcNav')) return;
+        const home = slider.querySelector('.emby-tab-button[data-index="0"]');
+        if (!home) return;
+        const nav = createActionHost('arcNav');
+        nav.innerHTML = librariesHtml(apiClient, libraries).replaceAll('arcLibraries-pill', 'arcNav-tab');
+        home.after(nav);
+    }
 
-        if (data.libraries.length) {
-            container.prepend(createActionHost('arcLibraries'));
-            container.querySelector(':scope > .arcLibraries').innerHTML = librariesHtml(apiClient, data.libraries);
-        }
+    function render(container, apiClient, data) {
+        container.querySelectorAll(':scope > .arcHero').forEach((el) => el.remove());
+        stopRotation();
+        container.setAttribute('data-arc-rendered', 'true');
 
         const slides = data.slides;
         if (!slides.length) {
@@ -362,27 +372,34 @@
     async function ensureHome() {
         scheduled = false;
         const container = document.querySelector('.homePage:not(.hide) .homeSectionsContainer');
+        // Lets arc-theme.css hide the logo and the Favorites tab on the home page only.
+        document.documentElement.classList.toggle('arc-on-home', !!container && themeOn());
         if (!container || !themeOn()) {
             updateHeader();
             return;
         }
         classifySections(container);
 
+        const apiClient = window.ApiClient;
+        const signedIn = apiClient && apiClient.getCurrentUserId && apiClient.getCurrentUserId();
+        if (signedIn && cache.data && cache.userId === apiClient.getCurrentUserId()) {
+            ensureNav(apiClient, cache.data.libraries);
+        }
+
         const hero = container.querySelector(':scope > .arcHero');
         if (hero) {
             if (hero.style.width !== `${document.documentElement.clientWidth}px`) bleed(hero);
             return;
         }
-        if (container.querySelector(':scope > .arcLibraries')) return; // rendered without slides
+        if (container.hasAttribute('data-arc-rendered')) return; // rendered without slides
         if (container.hasAttribute('data-arc-home')) return; // already loading
-
-        const apiClient = window.ApiClient;
-        if (!apiClient || !apiClient.getCurrentUserId || !apiClient.getCurrentUserId()) return;
+        if (!signedIn) return;
 
         container.setAttribute('data-arc-home', 'loading');
         try {
             const data = await loadHome(apiClient);
-            if (themeOn() && container.isConnected && !container.querySelector(':scope > .arcHero, :scope > .arcLibraries')) {
+            ensureNav(apiClient, data.libraries);
+            if (themeOn() && container.isConnected && !container.querySelector(':scope > .arcHero')) {
                 render(container, apiClient, data);
             }
         } catch (e) {
@@ -423,7 +440,9 @@
             schedule();
         } else {
             stopRotation();
-            document.querySelectorAll('.arcHero, .arcLibraries').forEach((el) => el.remove());
+            document.querySelectorAll('.arcHero, .arcLibraries, .arcNav').forEach((el) => el.remove());
+            document.querySelectorAll('[data-arc-rendered]').forEach((el) => el.removeAttribute('data-arc-rendered'));
+            document.documentElement.classList.remove('arc-on-home');
             document.querySelectorAll('[data-arc-section]').forEach((el) => el.removeAttribute('data-arc-section'));
             updateHeader();
         }
