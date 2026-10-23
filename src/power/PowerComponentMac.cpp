@@ -5,7 +5,7 @@ void PowerComponentMac::doDisableScreensaver()
 {
   if (m_assertion == 0)
   {
-    CFStringRef why = CFSTR("org.jellyfin.JellyfinDesktop");
+    CFStringRef why = CFSTR("local.arc.Arc");
     IOPMAssertionCreateWithName(kIOPMAssertionTypePreventUserIdleDisplaySleep,
                                 kIOPMAssertionLevelOn,
                                 why,

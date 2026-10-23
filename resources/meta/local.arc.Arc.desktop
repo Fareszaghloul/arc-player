@@ -1,28 +1,28 @@
 [Desktop Entry]
 Version=1.0
-Name=Jellyfin Desktop
-Comment=Jellyfin desktop client
-Exec=jellyfin-desktop
-Icon=org.jellyfin.JellyfinDesktop
+Name=Arc
+Comment=Arc media client
+Exec=arc-player
+Icon=local.arc.Arc
 Terminal=false
 Type=Application
-StartupWMClass=org.jellyfin.JellyfinDesktop
+StartupWMClass=local.arc.Arc
 Categories=AudioVideo;Video;Player;TV;
 
 Actions=DesktopF;DesktopW;TVF;TVW
 
 [Desktop Action DesktopF]
 Name=Desktop [Fullscreen]
-Exec=jellyfin-desktop --fullscreen --desktop
+Exec=arc-player --fullscreen --desktop
 
 [Desktop Action DesktopW]
 Name=Desktop [Windowed]
-Exec=jellyfin-desktop --windowed --desktop
+Exec=arc-player --windowed --desktop
 
 [Desktop Action TVF]
 Name=TV [Fullscreen]
-Exec=jellyfin-desktop --fullscreen --tv
+Exec=arc-player --fullscreen --tv
 
 [Desktop Action TVW]
 Name=TV [Windowed]
-Exec=jellyfin-desktop --windowed --tv
+Exec=arc-player --windowed --tv

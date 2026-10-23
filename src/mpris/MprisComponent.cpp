@@ -60,7 +60,7 @@ bool MprisComponent::componentInitialize()
 
   // Generate profile-specific service name using cache dir basename (profile ID)
   QString profileCacheDir = ProfileManager::activeProfile().cacheDir();
-  m_serviceName = QString("org.mpris.MediaPlayer2.JellyfinDesktop.profile_%1").arg(QFileInfo(profileCacheDir).fileName());
+  m_serviceName = QString("org.mpris.MediaPlayer2.Arc.profile_%1").arg(QFileInfo(profileCacheDir).fileName());
 
   qDebug() << "Attempting to register MPRIS service:" << m_serviceName;
   if (!QDBusConnection::sessionBus().registerService(m_serviceName))

@@ -88,7 +88,7 @@ static void preinitQt()
 {
   QCoreApplication::setApplicationName(Names::DataName());
   QCoreApplication::setApplicationVersion(Version::GetVersionString());
-  QCoreApplication::setOrganizationDomain("jellyfin.org");
+  QCoreApplication::setOrganizationDomain("arc.local");
 
 #ifdef Q_OS_WIN32
   // Qt 6 uses desktop OpenGL by default on Windows
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
   try
   {
     QCommandLineParser parser;
-    parser.setApplicationDescription("Jellyfin Desktop");
+    parser.setApplicationDescription("Arc");
     parser.addVersionOption();
     parser.addOptions({{{"h", "help"},              "Show this help"},
                        {{"l", "licenses"},          "Show license information"},
@@ -448,9 +448,9 @@ int main(int argc, char *argv[])
 
 #if defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
   	// Set window icon on Linux using system icon theme
-  	app.setWindowIcon(QIcon::fromTheme("org.jellyfin.JellyfinDesktop", QIcon(":/images/icon.png")));
+  	app.setWindowIcon(QIcon::fromTheme("local.arc.Arc", QIcon(":/images/icon.png")));
     // Set app id for Wayland compositor window icon
-    app.setDesktopFileName("org.jellyfin.JellyfinDesktop");
+    app.setDesktopFileName("local.arc.Arc");
 #endif
 
     // Configure default WebEngineProfile paths early (profile is already set)

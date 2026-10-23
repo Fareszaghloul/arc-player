@@ -48,7 +48,7 @@ jobs:
         key: "${{ secrets.REPO_KEY }}"
         source: deployment/dist/*
         strip_components: 2
-        target: "/srv/incoming/client/jellyfin-desktop/ubuntu/${{ matrix.tag }}"
+        target: "/srv/incoming/client/arc-player/ubuntu/${{ matrix.tag }}"
     - name: Import artifactsinto reprepro
       uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
       with:
@@ -60,8 +60,8 @@ jobs:
         script: |
           set -o xtrace
           COMPONENT="main"
-          sudo reprepro --waitforlock 30 --basedir /srv/ubuntu --component ${COMPONENT} includedeb ${{ matrix.tag }} /srv/incoming/client/jellyfin-desktop/ubuntu/${{ matrix.tag }}/*.deb || exit 1
-          sudo reprepro --waitforlock 30 --basedir /srv/ubuntu --component ${COMPONENT} includedsc ${{ matrix.tag }} /srv/incoming/client/jellyfin-desktop/ubuntu/${{ matrix.tag }}/*.dsc || exit 1
+          sudo reprepro --waitforlock 30 --basedir /srv/ubuntu --component ${COMPONENT} includedeb ${{ matrix.tag }} /srv/incoming/client/arc-player/ubuntu/${{ matrix.tag }}/*.deb || exit 1
+          sudo reprepro --waitforlock 30 --basedir /srv/ubuntu --component ${COMPONENT} includedsc ${{ matrix.tag }} /srv/incoming/client/arc-player/ubuntu/${{ matrix.tag }}/*.dsc || exit 1
     - name: Move artifacts into repository
       uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
       with:
@@ -71,9 +71,9 @@ jobs:
         debug: false
         script_stop: false
         script: |
-          export BASEDIR="/srv/repository/main/client/jellyfin-desktop/ubuntu"
+          export BASEDIR="/srv/repository/main/client/arc-player/ubuntu"
           sudo mkdir -p ${BASEDIR}/stable/${{ github.ref_name }} || exit 1
-          sudo mv -t ${BASEDIR}/stable/${{ github.ref_name }} /srv/incoming/client/jellyfin-desktop/ubuntu/${{ matrix.tag }}/* || exit 1
+          sudo mv -t ${BASEDIR}/stable/${{ github.ref_name }} /srv/incoming/client/arc-player/ubuntu/${{ matrix.tag }}/* || exit 1
           sudo rm ${BASEDIR}/latest || true
           sudo ln -sf ${BASEDIR}/stable/${{ github.ref_name }} ${BASEDIR}/latest || exit 1
 
@@ -121,7 +121,7 @@ jobs:
         key: "${{ secrets.REPO_KEY }}"
         source: deployment/dist/*
         strip_components: 2
-        target: "/srv/incoming/client/jellyfin-desktop/debian/${{ matrix.tag }}"
+        target: "/srv/incoming/client/arc-player/debian/${{ matrix.tag }}"
     - name: Import artifactsinto reprepro
       uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
       with:
@@ -133,8 +133,8 @@ jobs:
         script: |
           set -o xtrace
           COMPONENT="main"
-          sudo reprepro --waitforlock 30 --basedir /srv/debian --component ${COMPONENT} includedeb ${{ matrix.tag }} /srv/incoming/client/jellyfin-desktop/debian/${{ matrix.tag }}/*.deb || exit 1
-          sudo reprepro --waitforlock 30 --basedir /srv/debian --component ${COMPONENT} includedsc ${{ matrix.tag }} /srv/incoming/client/jellyfin-desktop/debian/${{ matrix.tag }}/*.dsc || exit 1
+          sudo reprepro --waitforlock 30 --basedir /srv/debian --component ${COMPONENT} includedeb ${{ matrix.tag }} /srv/incoming/client/arc-player/debian/${{ matrix.tag }}/*.deb || exit 1
+          sudo reprepro --waitforlock 30 --basedir /srv/debian --component ${COMPONENT} includedsc ${{ matrix.tag }} /srv/incoming/client/arc-player/debian/${{ matrix.tag }}/*.dsc || exit 1
     - name: Move artifacts into repository
       uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
       with:
@@ -144,8 +144,8 @@ jobs:
         debug: false
         script_stop: false
         script: |
-          export BASEDIR="/srv/repository/main/client/jellyfin-desktop/debian"
+          export BASEDIR="/srv/repository/main/client/arc-player/debian"
           sudo mkdir -p ${BASEDIR}/stable/${{ github.ref_name }} || exit 1
-          sudo mv -t ${BASEDIR}/stable/${{ github.ref_name }} /srv/incoming/client/jellyfin-desktop/debian/${{ matrix.tag }}/* || exit 1
+          sudo mv -t ${BASEDIR}/stable/${{ github.ref_name }} /srv/incoming/client/arc-player/debian/${{ matrix.tag }}/* || exit 1
           sudo rm ${BASEDIR}/latest || true
           sudo ln -sf ${BASEDIR}/stable/${{ github.ref_name }} ${BASEDIR}/latest || exit 1

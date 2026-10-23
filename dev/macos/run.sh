@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Jellyfin Desktop - Run built app
+# Arc - Run built app
 # Run build.sh first
 set -eu
 
@@ -14,4 +14,4 @@ if [ ! -d "${APP_PATH}" ]; then
     exit 1
 fi
 
-exec "${APP_PATH}/Contents/MacOS/Jellyfin Desktop" ${1+"$@"}
+exec "${APP_PATH}/Contents/MacOS/Arc" ${1+"$@"}

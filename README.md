@@ -1,48 +1,37 @@
-# Jellyfin Desktop
+# Arc
 
-Jellyfin desktop client built with Qt WebEngine and [libmpv](https://github.com/mpv-player/mpv). Supports audio passthrough, hardware decoding, and playback of more formats without transcoding.
+Arc is a desktop media client for Jellyfin servers, forked from
+[Jellyfin Desktop](https://github.com/jellyfin/jellyfin-media-player). It keeps the
+upstream architecture: a Qt 6 shell hosting Qt WebEngine for the server-served web
+client, with [libmpv](https://github.com/mpv-player/mpv) for playback (audio
+passthrough, hardware decoding, and direct play of formats the browser cannot handle).
 
-![Screenshot of Jellyfin Desktop](screenshots/video_player.png)
-
-## Downloads
-- [Flathub (Linux)](https://flathub.org/apps/details/org.jellyfin.JellyfinDesktop)
-
-### Development Builds
-Built from the latest commit on `master`.
-
-#### macOS
-- [Apple Silicon](https://nightly.link/jellyfin/jellyfin-desktop/workflows/build-macos/master/macos-arm64.zip)
-- [Intel](https://nightly.link/jellyfin/jellyfin-desktop/workflows/build-macos/master/macos-x86_64.zip)
-
-#### Windows
-- [x64 Installer](https://nightly.link/jellyfin/jellyfin-desktop/workflows/build-windows/master/windows-x64-installer.zip)
-- [x64 Portable](https://nightly.link/jellyfin/jellyfin-desktop/workflows/build-windows/master/windows-x64-portable.zip)
-
-#### Linux
-- [AppImage (x86_64)](https://nightly.link/jellyfin/jellyfin-desktop/workflows/build-appimage/master/linux-appimage-x86_64.zip)
+Arc is not affiliated with or endorsed by the Jellyfin project.
 
 ## Building
-See [dev/](dev/) for platform-specific build instructions.
 
-## File Locations
-Data is stored per-profile in a `profiles/<profile-id>/` subdirectory. The main configuration file is `jellyfin-desktop.conf`. You can also add `mpv.conf` to configure MPV directly.
+See [dev/](dev/) for platform-specific build instructions. On Windows the project
+must live at a path without spaces (Qt 6.10's `qt_add_qml_module` cannot handle them).
 
-**Windows:**
-- Config: `%LOCALAPPDATA%\Jellyfin Desktop\profiles\<profile-id>\`
-- Cache: `%LOCALAPPDATA%\Jellyfin Desktop\profiles\<profile-id>\`
-- Logs: `%LOCALAPPDATA%\Jellyfin Desktop\profiles\<profile-id>\logs\`
+## File locations
 
-**Linux:**
-- Config: `~/.local/share/jellyfin-desktop/profiles/<profile-id>/`
-- Cache: `~/.cache/jellyfin-desktop/profiles/<profile-id>/`
-- Logs: `~/.local/share/jellyfin-desktop/profiles/<profile-id>/logs/`
+Data is stored per profile in a `profiles/<profile-id>/` subdirectory. The main
+configuration file is `arc-player.conf`. Add `mpv.conf` alongside it to configure mpv
+directly.
 
-**Linux (Flatpak):**
-- Config: `~/.var/app/org.jellyfin.JellyfinDesktop/data/jellyfin-desktop/profiles/<profile-id>/`
-- Cache: `~/.var/app/org.jellyfin.JellyfinDesktop/cache/jellyfin-desktop/profiles/<profile-id>/`
-- Logs: `~/.var/app/org.jellyfin.JellyfinDesktop/data/jellyfin-desktop/profiles/<profile-id>/logs/`
+**Windows:** `%LOCALAPPDATA%\Arc\profiles\<profile-id>\` (config, cache, `logs\`)
 
-**macOS:**
-- Config: `~/Library/Application Support/Jellyfin Desktop/profiles/<profile-id>/`
-- Cache: `~/Library/Caches/Jellyfin Desktop/profiles/<profile-id>/`
-- Logs: `~/Library/Logs/Jellyfin Desktop/<profile-id>/`
+**Linux:** `~/.local/share/arc-player/profiles/<profile-id>/` (config, logs),
+`~/.cache/arc-player/profiles/<profile-id>/` (cache)
+
+**macOS:** `~/Library/Application Support/Arc/profiles/<profile-id>/` (config),
+`~/Library/Caches/Arc/profiles/<profile-id>/` (cache), `~/Library/Logs/Arc/<profile-id>/`
+
+## Debugging the web layer
+
+Run with `--remote-debugging-port=9222`, then open `chrome://inspect/#devices` in a
+Chromium browser and add `localhost:9222` as a network target.
+
+## License
+
+GPL-2.0, as upstream. See [LICENSE](LICENSE).

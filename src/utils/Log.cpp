@@ -99,7 +99,7 @@ void Log::Init()
 
   // Create unique log file for this instance
   QString logDir = getLogDir();
-  QTemporaryFile tempFile(logDir + "/jellyfin-desktop-XXXXXX.log");
+  QTemporaryFile tempFile(logDir + "/arc-player-XXXXXX.log");
   tempFile.setAutoRemove(false);
   if (!tempFile.open())
   {
@@ -111,7 +111,7 @@ void Log::Init()
   logFile = new QFile(tempLogPath);
   logFile->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate);
 
-  qInfo() << "Starting Jellyfin version:" << qPrintable(Version::GetVersionString()) << "build date:" << qPrintable(Version::GetBuildDate());
+  qInfo() << "Starting Arc version:" << qPrintable(Version::GetVersionString()) << "build date:" << qPrintable(Version::GetBuildDate());
   qInfo() << qPrintable(QString("  Running on: %1 [%2] arch %3").arg(QSysInfo::prettyProductName()).arg(QSysInfo::kernelVersion()).arg(QSysInfo::currentCpuArchitecture()));
   qInfo() << "  Qt Version:" << QT_VERSION_STR << qPrintable(QString("[%1]").arg(QSysInfo::buildAbi()));
 

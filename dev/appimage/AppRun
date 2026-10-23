@@ -30,4 +30,4 @@ export LD_PRELOAD="${HERE}/usr/lib/libpositioner-fix.so${LD_PRELOAD:+:$LD_PRELOA
 exec "${HERE}/usr/lib/ld-linux-x86-64.so.2" \
     --inhibit-cache \
     --library-path "${LIBRARY_PATH}" \
-    "${HERE}/usr/bin/jellyfin-desktop" "$@"
+    "${HERE}/usr/bin/arc-player" "$@"

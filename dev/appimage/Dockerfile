@@ -33,20 +33,20 @@ RUN cmake -G Ninja \
 RUN mkdir -p /AppDir/usr/bin /AppDir/usr/share
 
 # Binary
-RUN cp /usr/bin/jellyfin-desktop /AppDir/usr/bin/
+RUN cp /usr/bin/arc-player /AppDir/usr/bin/
 
 # Ship all shared libraries. This is the key to the junest approach: we include
 # glibc and ld-linux so the AppImage is independent of the host's glibc version.
 RUN cp -a /usr/lib /AppDir/usr/lib
 
 # App data, Qt resources, desktop integration
-RUN for d in jellyfin-desktop qt6; do \
+RUN for d in arc-player qt6; do \
         [ -d "/usr/share/$d" ] && cp -a "/usr/share/$d" "/AppDir/usr/share/$d"; \
     done && \
     mkdir -p /AppDir/usr/share/applications /AppDir/usr/share/icons /AppDir/usr/share/metainfo && \
-    cp /usr/share/applications/org.jellyfin.JellyfinDesktop.desktop /AppDir/usr/share/applications/ && \
+    cp /usr/share/applications/local.arc.Arc.desktop /AppDir/usr/share/applications/ && \
     cp -a /usr/share/icons/hicolor /AppDir/usr/share/icons/ && \
-    cp /usr/share/metainfo/org.jellyfin.JellyfinDesktop.appdata.xml /AppDir/usr/share/metainfo/ 2>/dev/null || true
+    cp /usr/share/metainfo/local.arc.Arc.appdata.xml /AppDir/usr/share/metainfo/ 2>/dev/null || true
 
 # Strip out files that aren't needed at runtime to reduce AppImage size
 RUN find /AppDir/usr/lib -name '*.a' -delete && \
@@ -114,9 +114,9 @@ RUN find /AppDir/usr/lib /AppDir/usr/bin -type f \( -name '*.so*' -o -executable
     done
 
 # Desktop integration files at AppDir root (required by AppImage spec)
-RUN cp /AppDir/usr/share/applications/org.jellyfin.JellyfinDesktop.desktop /AppDir/ && \
-    cp /AppDir/usr/share/icons/hicolor/scalable/apps/org.jellyfin.JellyfinDesktop.svg /AppDir/ && \
-    ln -sf org.jellyfin.JellyfinDesktop.svg /AppDir/.DirIcon
+RUN cp /AppDir/usr/share/applications/local.arc.Arc.desktop /AppDir/ && \
+    cp /AppDir/usr/share/icons/hicolor/scalable/apps/local.arc.Arc.svg /AppDir/ && \
+    ln -sf local.arc.Arc.svg /AppDir/.DirIcon
 
 # Build Wayland positioner fix (LD_PRELOAD library).
 # Prevents xdg_positioner.set_size(0,0) during popup reposition, which is
@@ -149,6 +149,6 @@ RUN chmod +x /AppDir/AppRun
 # Build the AppImage
 RUN mkdir -p /output && \
     ARCH=x86_64 /opt/tools/appimagetool/AppRun --no-appstream \
-    /AppDir /output/JellyfinDesktop-x86_64.AppImage
+    /AppDir /output/Arc-x86_64.AppImage
 
-CMD ["cp", "/output/JellyfinDesktop-x86_64.AppImage", "/host-output/"]
+CMD ["cp", "/output/Arc-x86_64.AppImage", "/host-output/"]

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>local.arc.Arc</id>
+  <name>Arc</name>
+  <summary>Arc media client for Jellyfin servers</summary>
+  <developer id="local.arc">
+    <name>Arc</name>
+  </developer>
+  <project_license>GPL-2.0</project_license>
+  <metadata_license>CC0-1.0</metadata_license>
+  <url type="homepage">https://arc.local</url>
+
+  <provides>
+    <binary>arc-player</binary>
+  </provides>
+  <launchable type="desktop-id">local.arc.Arc.desktop</launchable>
+
+  <description>
+    <p>Arc is a desktop client for Jellyfin servers, forked from Jellyfin Desktop. It is built with Qt WebEngine and libmpv and supports audio passthrough, hardware decoding, and playback of more formats without transcoding.</p>
+  </description>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Video</category>
+    <category>Player</category>
+    <category>TV</category>
+  </categories>
+  <content_rating type="oars-1.1" />
+</component>

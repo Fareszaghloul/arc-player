@@ -677,7 +677,7 @@
     "values": [
         {
           "value": "systemname",
-          "default": "JellyfinDesktop",
+          "default": "Arc",
           "hidden": true,
           "platforms": [ "oe" ]
         },

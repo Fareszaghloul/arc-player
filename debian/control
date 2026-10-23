@@ -1,4 +1,4 @@
-Source: jellyfin-desktop
+Source: arc-player
 Section: video
 Priority: optional
 Maintainer:  Izzie Walton <izzie@iwalton.com>, Joshua Boniface <joshua@boniface.me>
@@ -38,11 +38,11 @@ Build-Depends: debhelper (>= 10),
                unzip,
                qt6-base-private-dev
 Standards-Version: 3.9.4
-Homepage: https://jellyfin.org/
-Vcs-Git: https://github.org/jellyfin/jellyfin-desktop.git
-Vcs-Browser: https://github.org/jellyfin/jellyfin-desktop
+Homepage: https://arc.local/
+Vcs-Git: https://arc.local
+Vcs-Browser: https://arc.local
 
-Package: jellyfin-desktop
+Package: arc-player
 Architecture: any
 Depends: ${shlibs:Depends},
          qml6-module-qtwebengine,
@@ -53,4 +53,4 @@ Depends: ${shlibs:Depends},
          qml6-module-qtquick-templates,
          qml6-module-qt-labs-platform
 Description: Jellyfin is the Free Software Media System.
- This package provides the Jellyfin desktop media player.
+ This package provides the Arc media player.

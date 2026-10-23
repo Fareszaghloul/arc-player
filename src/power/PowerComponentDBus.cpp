@@ -109,7 +109,7 @@ void PowerComponentDBus::doDisableScreensaver()
                          DBUS_SCREENSAVER_INTERFACE, QDBusConnection::sessionBus());
     if (iface.isValid())
     {
-      QDBusReply<unsigned int> reply = iface.call("Inhibit", "jellyfin-desktop", "playing");
+      QDBusReply<unsigned int> reply = iface.call("Inhibit", "arc-player", "playing");
 
       if (reply.isValid())
       {

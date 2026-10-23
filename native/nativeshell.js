@@ -167,7 +167,7 @@ function getDeviceProfile() {
     }
 
     return {
-        'Name': 'Jellyfin Desktop',
+        'Name': 'Arc',
         'MaxStaticBitrate': 1000000000,
         'MusicStreamingTranscodingBitrate': 1280000,
         'TimelineOffsetSeconds': 5,
@@ -316,7 +316,7 @@ window.NativeShell.AppHost = {
     init() {
         return Promise.resolve({
             deviceName: jmpInfo.deviceName,
-            appName: "Jellyfin Desktop",
+            appName: "Arc",
             appVersion: jmpInfo.version
         });
     },
@@ -329,7 +329,7 @@ window.NativeShell.AppHost = {
     getDeviceProfile,
     getSyncProfile: getDeviceProfile,
     appName() {
-        return "Jellyfin Desktop";
+        return "Arc";
     },
     appVersion() {
         return jmpInfo.version;

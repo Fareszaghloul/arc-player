@@ -17,15 +17,15 @@ jobs:
         WORKSPACE: ${{ github.workspace }}
       run: |
         docker build \
-          -t jellyfin-desktop-appimage \
+          -t arc-player-appimage \
           -f dev/appimage/Dockerfile \
           .
         mkdir -p output
         docker run --rm \
           -v "${WORKSPACE}/output:/host-output" \
-          jellyfin-desktop-appimage
+          arc-player-appimage
     - name: Archive production artifacts
       uses: actions/upload-artifact@v7
       with:
         name: linux-appimage-x86_64
-        path: ${{ github.workspace }}/output/JellyfinDesktop-*.AppImage
+        path: ${{ github.workspace }}/output/Arc-*.AppImage

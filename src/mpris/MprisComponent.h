@@ -34,8 +34,8 @@ public:
   bool fullscreen() const;
   void setFullscreen(bool value);
   bool hasTrackList() const { return false; }
-  QString identity() const { return "Jellyfin Desktop"; }
-  QString desktopEntry() const { return "org.jellyfin.JellyfinDesktop"; }
+  QString identity() const { return "Arc"; }
+  QString desktopEntry() const { return "local.arc.Arc"; }
   QStringList supportedUriSchemes() const { return QStringList(); }
   QStringList supportedMimeTypes() const { return QStringList(); }
 

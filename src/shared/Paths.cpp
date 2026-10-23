@@ -80,8 +80,8 @@ static QDir writableLocation(QStandardPaths::StandardLocation loc)
 // Try a couple of different strategies to find the file we are looking for.
 // 1) By looking next to the application binary
 // 2) By looking in binary/../Resources
-// 3) By looking in PREFIX/share/jellyfin-desktop
-// 4) By looking in PREFIX/jellyfin-desktop
+// 3) By looking in PREFIX/share/arc-player
+// 4) By looking in PREFIX/arc-player
 //
 QString Paths::resourceDir(const QString& file)
 {
@@ -91,8 +91,8 @@ QString Paths::resourceDir(const QString& file)
   QStringList possibleResourceDirs = {
     appResourceDir,
     appResourceDir + "../Resources/",
-    prefixDir + "/share/jellyfin-desktop/",
-    prefixDir + "/jellyfin-desktop/"
+    prefixDir + "/share/arc-player/",
+    prefixDir + "/arc-player/"
   };
 
   for (const auto& fileStr : possibleResourceDirs)
@@ -158,7 +158,7 @@ QString Paths::socketName(const QString& serverName)
   QString profileName = ProfileManager::activeProfile().name();
   if (profileName.isEmpty())
     profileName = "default";
-  QString socketFile = QString("jellyfin-desktop.%1.%2").arg(profileName, serverName);
+  QString socketFile = QString("arc-player.%1.%2").arg(profileName, serverName);
 
 #ifdef Q_OS_UNIX
   QString runtimeDir = QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation);

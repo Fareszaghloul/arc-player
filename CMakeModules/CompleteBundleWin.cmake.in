@@ -2,10 +2,10 @@ set(PROJECT_SOURCE_DIR @PROJECT_SOURCE_DIR@)
 set(QTROOT "@QTROOT@")
 
 message(STATUS "Running windeployqt from: ${QTROOT}/bin/windeployqt.exe")
-message(STATUS "Target: ${CMAKE_INSTALL_PREFIX}/Jellyfin Desktop.exe")
+message(STATUS "Target: ${CMAKE_INSTALL_PREFIX}/Arc.exe")
 
 execute_process(
-  COMMAND "${QTROOT}/bin/windeployqt.exe" --verbose 9 --qmldir @SOURCE_ROOT@/src/ui "${CMAKE_INSTALL_PREFIX}/Jellyfin Desktop.exe"
+  COMMAND "${QTROOT}/bin/windeployqt.exe" --verbose 9 --qmldir @SOURCE_ROOT@/src/ui "${CMAKE_INSTALL_PREFIX}/Arc.exe"
   RESULT_VARIABLE WINDEPLOYQT_RESULT
 )
 
@@ -27,7 +27,7 @@ endforeach()
 get_filename_component(CEC_DIR @CEC_LIBRARY@ DIRECTORY)
 list(APPEND SEARCHDIRS ${CEC_DIR})
 
-# fixup_bundle("${CMAKE_INSTALL_PREFIX}/Jellyfin Desktop.exe" "" "${SEARCHDIRS}")
+# fixup_bundle("${CMAKE_INSTALL_PREFIX}/Arc.exe" "" "${SEARCHDIRS}")
 #install(PROGRAMS ${VCREDIST_DIR}/vcredist_msvc2017_x64.exe DESTINATION .)
 
 # Install MPV DLL (MPV_LIBRARY points to .lib, we need the .dll)

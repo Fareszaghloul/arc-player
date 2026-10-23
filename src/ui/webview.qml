@@ -9,7 +9,7 @@ import Qt.labs.platform as Labs
 Window
 {
   id: mainWindow
-  title: "Jellyfin Desktop"
+  title: "Arc"
   objectName: "mainWindow"
   width: 1280
   height: 720
@@ -252,7 +252,7 @@ Window
     }
     profile.persistentCookiesPolicy: WebEngineProfile.AllowPersistentCookies
     profile.offTheRecord: false
-    profile.storageName: "JellyfinDesktopStorage"
+    profile.storageName: "ArcStorage"
 
     Component.onCompleted:
     {
@@ -297,7 +297,7 @@ Window
         console.log("WebEngineLoadRequest failure: " + loadingInfo.url + " error code: " + loadingInfo.errorCode);
         errorLabel.visible = true
         errorLabel.text = "Error loading client, this is bad and should not happen<br>" +
-                          "You can try to <a href='reload'>reload</a> or head to our <a href='http://jellyfin.org'>support page</a><br><br>Actual Error: <pre>" +
+                          "You can try to <a href='reload'>reload</a> or head to our <a href='https://arc.local'>support page</a><br><br>Actual Error: <pre>" +
                           loadingInfo.errorString + " [" + loadingInfo.errorCode + "]</pre><br><br>" +
                           "Provide the <a target='_blank' href='file://"+ components.system.logFilePath + "'>logfile</a> as well."
       }
@@ -422,7 +422,7 @@ Window
   Labs.SystemTrayIcon {
     visible: showSystemTrayIcon
     icon.source: "qrc:/images/icon.png"
-    tooltip: "Jellyfin Desktop"
+    tooltip: "Arc"
 
     onActivated: function(reason) {
       if (reason === Labs.SystemTrayIcon.Context) {

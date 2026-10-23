@@ -229,7 +229,7 @@ static void writeJson(const QString& filename, const QJsonObject& data, bool pre
 /////////////////////////////////////////////////////////////////////////////////////////
 QVariant SettingsComponent::readPreinitValue(const QString& sectionID, const QString& key)
 {
-  QString path = ProfileManager::activeProfile().dataDir("jellyfin-desktop.conf");
+  QString path = ProfileManager::activeProfile().dataDir("arc-player.conf");
   if (path.isEmpty())
     return QVariant();
   QJsonObject json = loadJson(path);
@@ -246,7 +246,7 @@ void SettingsComponent::load()
     return;
   }
 
-  loadConf(ProfileManager::activeProfile().dataDir("jellyfin-desktop.conf"), false);
+  loadConf(ProfileManager::activeProfile().dataDir("arc-player.conf"), false);
   loadConf(ProfileManager::activeProfile().dataDir("storage.json"), true);
 }
 
@@ -307,7 +307,7 @@ void SettingsComponent::loadConf(const QString& path, bool storage)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void SettingsComponent::saveSettings()
 {
-  QString path = ProfileManager::activeProfile().dataDir("jellyfin-desktop.conf");
+  QString path = ProfileManager::activeProfile().dataDir("arc-player.conf");
   if (path.isEmpty())
   {
     qWarning() << "No active profile, cannot save settings";
@@ -728,11 +728,11 @@ bool SettingsComponent::componentInitialize()
 /////////////////////////////////////////////////////////////////////////////////////////
 bool SettingsComponent::resetAndSaveOldConfiguration()
 {
-  QString path = ProfileManager::activeProfile().dataDir("jellyfin-desktop.conf");
+  QString path = ProfileManager::activeProfile().dataDir("arc-player.conf");
   if (path.isEmpty())
     return false;
   QFile settingsFile(path);
-  return settingsFile.rename(ProfileManager::activeProfile().dataDir("jellyfin-desktop.conf.old"));
+  return settingsFile.rename(ProfileManager::activeProfile().dataDir("arc-player.conf.old"));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -776,7 +776,7 @@ QString SettingsComponent::getClientName()
   QString name;
   name = SettingsComponent::Get().value(SETTINGS_SECTION_SYSTEM, "systemname").toString();
 
-  if (name.compare("JellyfinDesktop") == 0) {
+  if (name.compare("Arc") == 0) {
     name = Utils::ComputerName();
   }
 

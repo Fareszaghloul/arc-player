@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Jellyfin Desktop - Linux build & install script
+# Arc - Linux build & install script
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${0}")" && pwd)"
@@ -41,7 +41,7 @@ cmake -B "${BUILD_DIR}" -G Ninja \
 echo "Building..."
 cmake --build "${BUILD_DIR}"
 
-BINARY="${BUILD_DIR}/src/jellyfin-desktop"
+BINARY="${BUILD_DIR}/src/arc-player"
 if [[ ! -x "${BINARY}" ]]; then
 	echo "error: build did not produce ${BINARY}" >&2
 	exit 1
@@ -51,13 +51,13 @@ echo ""
 echo "Build complete: ${BINARY}"
 echo ""
 
-BIN_DEST="${PREFIX}/bin/jellyfin-desktop"
-DESKTOP_SRC="${PROJECT_ROOT}/resources/meta/org.jellyfin.JellyfinDesktop.desktop"
-APPDATA_SRC="${PROJECT_ROOT}/resources/meta/org.jellyfin.JellyfinDesktop.appdata.xml"
+BIN_DEST="${PREFIX}/bin/arc-player"
+DESKTOP_SRC="${PROJECT_ROOT}/resources/meta/local.arc.Arc.desktop"
+APPDATA_SRC="${PROJECT_ROOT}/resources/meta/local.arc.Arc.appdata.xml"
 ICON_SRC="${PROJECT_ROOT}/resources/images/icon.svg"
-DESKTOP_DEST="${PREFIX}/share/applications/org.jellyfin.JellyfinDesktop.desktop"
-APPDATA_DEST="${PREFIX}/share/metainfo/org.jellyfin.JellyfinDesktop.appdata.xml"
-ICON_DEST="${PREFIX}/share/icons/hicolor/scalable/apps/org.jellyfin.JellyfinDesktop.svg"
+DESKTOP_DEST="${PREFIX}/share/applications/local.arc.Arc.desktop"
+APPDATA_DEST="${PREFIX}/share/metainfo/local.arc.Arc.appdata.xml"
+ICON_DEST="${PREFIX}/share/icons/hicolor/scalable/apps/local.arc.Arc.svg"
 
 if confirm "Install binary to ${BIN_DEST} (requires sudo)?"; then
 	sudo install -Dm755 "${BINARY}" "${BIN_DEST}"

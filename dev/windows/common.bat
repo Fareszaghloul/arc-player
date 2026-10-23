@@ -1,5 +1,5 @@
 @echo off
-REM Jellyfin Desktop - Common variables
+REM Arc - Common variables
 REM Sourced by other scripts
 
 set QT_VERSION=6.10.1
@@ -9,7 +9,7 @@ set SCRIPT_DIR=%~dp0
 for %%i in ("%SCRIPT_DIR%\..\..") do set "PROJECT_ROOT=%%~fi"
 set DEPS_DIR=%SCRIPT_DIR%deps
 set BUILD_DIR=%PROJECT_ROOT%\build
-set EXE_NAME=Jellyfin Desktop.exe
+set EXE_NAME=Arc.exe
 
 REM === Find Visual Studio ===
 set VCVARS=

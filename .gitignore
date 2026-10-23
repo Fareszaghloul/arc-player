@@ -15,8 +15,8 @@ CMakePresets.json
 .*libreelec*
 debian/*.debhelper.log
 debian/.debhelper/
-debian/jellyfin-desktop/
+debian/arc-player/
 debian/files
-debian/jellyfin-desktop.substvars
+debian/arc-player.substvars
 debian/debhelper-build-stamp
 deployment/dist

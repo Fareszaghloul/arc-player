@@ -12,7 +12,8 @@ class updatePlugin {
                 if (url == "SSL_UNAVAILABLE") {
                     // Windows (and possibly macOS) don't ship with SSL in QT......
                     // So we get to do a full request to GitHub here :(
-                    const checkUrl = "https://github.com/jellyfin/jellyfin-desktop/releases/latest";
+                    // CHANGE-ME: point at the fork's own release feed.
+                    const checkUrl = "https://github.com/CHANGE-ME/arc/releases/latest";
                     url = (await fetch(checkUrl)).url;
                 }
 
@@ -30,7 +31,7 @@ class updatePlugin {
 
                     await confirm({
                         title: "Update Available",
-                        text: `Jellyfin Desktop version ${version} is available.`,
+                        text: `Arc version ${version} is available.`,
                         cancelText: "Ignore",
                         confirmText: "Download"
                     });

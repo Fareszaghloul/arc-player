@@ -1,16 +1,16 @@
-; Jellyfin Desktop Installer Script for Inno Setup
+; Arc Installer Script for Inno Setup
 ; Based on WiX configuration from JMP.wxs and Bundle.wxs
 ;
 ; NOTE: Media Feature Pack downloads for Windows N editions are not included in this
 ; Inno Setup version as they require MSU package handling that was specific to WiX Bundle.
 ; Users on Windows N editions will need to install Media Feature Pack manually if needed.
 
-#define MyAppName "Jellyfin Desktop"
+#define MyAppName "Arc"
 #define MyAppVersion "@VERSION_STRING@"
-#define MyAppPublisher "jellyfin.org"
-#define MyAppURL "https://jellyfin.org"
-#define MyAppExeName "Jellyfin Desktop.exe"
-#define MyAppGUID "{{a78bea4a-5bd0-4aa3-bdf3-579b4f58a921}"
+#define MyAppPublisher "Arc"
+#define MyAppURL "https://arc.local"
+#define MyAppExeName "Arc.exe"
+#define MyAppGUID "{{dd822ab1-0ded-48d0-9194-c13224db5d59}"
 #define DeployPath "@CMAKE_INSTALL_PREFIX@"
 
 [Setup]
@@ -23,9 +23,9 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-AppComments=Jellyfin desktop client
+AppComments=Arc media client
 AppContact={#MyAppPublisher}
-DefaultDirName={autopf}\Jellyfin Desktop
+DefaultDirName={autopf}\Arc
 DisableProgramGroupPage=yes
 ; Require Windows 10 1903 or newer
 MinVersion=10.0.18362
@@ -34,8 +34,8 @@ ArchitecturesAllowed=x64compatible
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=.
-OutputBaseFilename=JellyfinDesktop-{#MyAppVersion}-windows-x64
-SetupIconFile=@PROJECT_SOURCE_DIR@/bundle/win/jellyfin.ico
+OutputBaseFilename=Arc-{#MyAppVersion}-windows-x64
+SetupIconFile=@PROJECT_SOURCE_DIR@/bundle/win/arc.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2/ultra64
 SolidCompression=yes
@@ -64,14 +64,14 @@ Source: "{#DeployPath}/redist/*.dll"; DestDir: "{app}"; Flags: ignoreversion; Ch
 Source: "{#DeployPath}/vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall; Check: ShouldExtractVCRedist
 
 [Icons]
-Name: "{autoprograms}\Jellyfin Desktop"; Filename: "{app}\{#MyAppExeName}"; Comment: "Jellyfin desktop client"; WorkingDir: "{app}"
-Name: "{autodesktop}\Jellyfin Desktop"; Filename: "{app}\{#MyAppExeName}"; Comment: "Jellyfin desktop client"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autoprograms}\Arc"; Filename: "{app}\{#MyAppExeName}"; Comment: "Arc media client"; WorkingDir: "{app}"
+Name: "{autodesktop}\Arc"; Filename: "{app}\{#MyAppExeName}"; Comment: "Arc media client"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
 ; Install VCRedist if downloaded
 Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /passive /norestart"; StatusMsg: "Installing Visual C++ Redistributable..."; Flags: waituntilterminated; Check: ShouldInstallVCRedist
 ; Launch app after install
-Filename: "{app}\{#MyAppExeName}"; Description: "Launch Jellyfin Desktop"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "Launch Arc"; Flags: nowait postinstall skipifsilent
 
 [Code]
 var
@@ -159,19 +159,19 @@ var
 begin
   if CurUninstallStep = usUninstall then
   begin
-    DataDir := ExpandConstant('{localappdata}\Jellyfin Desktop');
-    CacheDir := ExpandConstant('{localappdata}\cache\Jellyfin Desktop');
+    DataDir := ExpandConstant('{localappdata}\Arc');
+    CacheDir := ExpandConstant('{localappdata}\cache\Arc');
 
     if DirExists(DataDir) or DirExists(CacheDir) then
-      RemoveUserData := MsgBox('Do you want to remove your Jellyfin Desktop user data?',
+      RemoveUserData := MsgBox('Do you want to remove your Arc user data?',
                                mbConfirmation, MB_YESNO) = IDYES;
   end
   else if CurUninstallStep = usPostUninstall then
   begin
     if RemoveUserData then
     begin
-      DataDir := ExpandConstant('{localappdata}\Jellyfin Desktop');
-      CacheDir := ExpandConstant('{localappdata}\cache\Jellyfin Desktop');
+      DataDir := ExpandConstant('{localappdata}\Arc');
+      CacheDir := ExpandConstant('{localappdata}\cache\Arc');
       DelTree(DataDir, True, True, True);
       DelTree(CacheDir, True, True, True);
     end;

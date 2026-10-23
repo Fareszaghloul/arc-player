@@ -19,7 +19,7 @@ else()
 endif()
 
 set(INSTALL_BIN_DIR ${CMAKE_INSTALL_BINDIR})
-set(INSTALL_RESOURCE_DIR ${CMAKE_INSTALL_DATADIR}/jellyfin-desktop)
+set(INSTALL_RESOURCE_DIR ${CMAKE_INSTALL_DATADIR}/arc-player)
 
 if(NOT OPENELEC)
   include(InstallLinuxDesktopFile)

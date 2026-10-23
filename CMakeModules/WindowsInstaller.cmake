@@ -18,8 +18,8 @@ message(STATUS "Found Inno Setup: ${ISCC}")
 
 # Configure the Inno Setup script with version and paths
 configure_file(
-  ${PROJECT_SOURCE_DIR}/bundle/win/JellyfinDesktop.iss.in
-  ${CMAKE_CURRENT_BINARY_DIR}/JellyfinDesktop.iss
+  ${PROJECT_SOURCE_DIR}/bundle/win/Arc.iss.in
+  ${CMAKE_CURRENT_BINARY_DIR}/Arc.iss
   @ONLY
 )
 
@@ -27,7 +27,7 @@ configure_file(
 add_custom_target(innosetup_install
   COMMAND ${CMAKE_COMMAND} -P cmake_install.cmake
   COMMENT "Copying files for installer..."
-  DEPENDS JellyfinDesktop
+  DEPENDS Arc
 )
 
 # Determine architecture string for output filename
@@ -37,28 +37,28 @@ else()
   set(INSTALLER_ARCH_STR x86)
 endif()
 
-set(INSTALLER_BASE_NAME "JellyfinDesktop-${VERSION_STRING}-${INSTALLER_ARCH_STR}")
+set(INSTALLER_BASE_NAME "Arc-${VERSION_STRING}-${INSTALLER_ARCH_STR}")
 set(INSTALLER_OUTPUT_NAME "${INSTALLER_BASE_NAME}.exe")
 
 # Create the installer using Inno Setup
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${INSTALLER_OUTPUT_NAME}
-  DEPENDS innosetup_install ${CMAKE_CURRENT_BINARY_DIR}/JellyfinDesktop.iss
+  DEPENDS innosetup_install ${CMAKE_CURRENT_BINARY_DIR}/Arc.iss
   COMMAND ${ISCC}
     /O${CMAKE_CURRENT_BINARY_DIR}
     /F${INSTALLER_BASE_NAME}
-    ${CMAKE_CURRENT_BINARY_DIR}/JellyfinDesktop.iss
+    ${CMAKE_CURRENT_BINARY_DIR}/Arc.iss
   COMMENT "Building Inno Setup installer: ${INSTALLER_OUTPUT_NAME}"
   VERBATIM
 )
 
 # Target to build the installer
-add_custom_target(JellyfinDesktopInstaller
+add_custom_target(ArcInstaller
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${INSTALLER_OUTPUT_NAME}
 )
 
 # Alias target for convenience
-add_custom_target(windows_package DEPENDS JellyfinDesktopInstaller)
+add_custom_target(windows_package DEPENDS ArcInstaller)
 
 # Create portable ZIP archive (includes bundled runtime DLLs in root)
 set(ZIP_OUTPUT_NAME "${INSTALLER_BASE_NAME}.zip")
@@ -80,14 +80,14 @@ add_custom_command(
   VERBATIM
 )
 
-add_custom_target(JellyfinDesktopZip
+add_custom_target(ArcZip
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${ZIP_OUTPUT_NAME}
 )
 
-add_custom_target(windows_zip DEPENDS JellyfinDesktopZip)
+add_custom_target(windows_zip DEPENDS ArcZip)
 
 # Combined target for both installer and ZIP
-add_custom_target(windows_all DEPENDS JellyfinDesktopInstaller JellyfinDesktopZip)
+add_custom_target(windows_all DEPENDS ArcInstaller ArcZip)
 
 message(STATUS "Windows installer target configured: windows_package")
 message(STATUS "Windows portable ZIP target configured: windows_zip")

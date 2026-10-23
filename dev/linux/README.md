@@ -1,4 +1,4 @@
-# Building Jellyfin Desktop on Linux
+# Building Arc on Linux
 
 ## Quick Start
 
@@ -23,15 +23,15 @@ dev/linux/build.sh   # Configure, build, and optionally install
 
 `build.sh` asks for confirmation separately before each `sudo` step:
 
-1. **Install Binary** @ `/usr/local/bin/jellyfin-desktop`
+1. **Install Binary** @ `/usr/local/bin/arc-player`
 2. **Desktop integration** (`.desktop` file, icon, appdata metadata) @ `/usr/local/share/{applications,icons,metainfo}/`
 
-Answer `n` to either prompt to skip it. The built binary at `build/src/jellyfin-desktop` still runs without installing.
+Answer `n` to either prompt to skip it. The built binary at `build/src/arc-player` still runs without installing.
 
 ## Directory Structure
 
 - `build/` - Build output (safe to delete)
-- `build/src/jellyfin-desktop` - Built executable
+- `build/src/arc-player` - Built executable
 
 ## Scripts
 
