@@ -587,7 +587,21 @@ QString SystemComponent::getNativeShellScript()
   clientData.insert("sections", QJsonValue::fromVariant(SettingsComponent::Get().orderedSections()));
   clientData.insert("settingsDescriptions", QJsonValue::fromVariant(settingsDescriptions));
   clientData.insert("settings", QJsonValue::fromVariant(SettingsComponent::Get().allValues()));
-  clientData.insert("themeCss", loadResource(":/web-client/extension/arc-theme.css"));
+  // The theme's @font-face rules name bundled fonts by placeholder; they are inlined
+  // here as data: URLs because the page (served by the Jellyfin server) cannot load
+  // files from qrc. Inter is licensed under the SIL OFL 1.1 (native/fonts/Inter-OFL.txt).
+  auto fontDataUrl = [](const QString& resourcePath) -> QString {
+    QFile file(resourcePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+      qCritical() << "Failed to load" << resourcePath << "from qrc";
+      return "";
+    }
+    return "data:font/woff2;base64," + QString::fromLatin1(file.readAll().toBase64());
+  };
+  QString themeCss = loadResource(":/web-client/extension/arc-theme.css");
+  themeCss.replace("ARC_FONT_INTER_LATIN_EXT", fontDataUrl(":/web-client/extension/fonts/inter-latin-ext.woff2"));
+  themeCss.replace("ARC_FONT_INTER_LATIN", fontDataUrl(":/web-client/extension/fonts/inter-latin.woff2"));
+  clientData.insert("themeCss", themeCss);
 
   QString jmpInfoDeclaration = "const jmpInfo = JSON.parse(window.atob(\"" +
                                 QJsonDocument(clientData).toJson(QJsonDocument::Compact).toBase64() +
@@ -603,7 +617,8 @@ QString SystemComponent::getNativeShellScript()
     ":/web-client/extension/nativeshell.js",
     ":/web-client/extension/arcTheme.js",
     ":/web-client/extension/arcHome.js",
-    ":/web-client/extension/arcPlayer.js"
+    ":/web-client/extension/arcPlayer.js",
+    ":/web-client/extension/arcDetail.js"
   };
 
   cachedScript = jmpInfoDeclaration;

@@ -11,6 +11,29 @@
  * and anything filled with it carries black text (--arc-on-accent).
  */
 
+/* Inter (SIL OFL 1.1, native/fonts/Inter-OFL.txt), variable weight 100-900, Latin and
+   Latin Extended subsets. SystemComponent::getNativeShellScript() replaces the
+   placeholders with data: URLs; scripts Inter lacks (Arabic, ...) fall back to the
+   system fonts after it in --arc-font. */
+@font-face {
+    font-family: "Arc Inter";
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url(ARC_FONT_INTER_LATIN_EXT) format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+                   U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+    font-family: "Arc Inter";
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url(ARC_FONT_INTER_LATIN) format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+                   U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 :root {
     --arc-bg: #000;
     --arc-surface: #111113;
@@ -31,9 +54,8 @@
     --arc-blur: saturate(180%) blur(24px);
     --arc-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
     --arc-glyph: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%22196 196 632 632%22 width=%22632%22 height=%22632%22%3E%3Ctitle%3EArc%3C/title%3E%3Cpath d=%22M 262 762 L 262 512 A 250 250 0 0 1 762 512 L 762 762%22 fill=%22none%22 stroke=%22%23f5f5f7%22 stroke-width=%22132%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E");
-    --arc-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-                "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI",
-                "Helvetica Neue", Inter, system-ui, sans-serif;
+    --arc-font: "Arc Inter", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text",
+                "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
 }
 
 /* ---------------------------------------------------------------- base */
@@ -675,12 +697,394 @@ html { scrollbar-width: none; }
 .arcLibraries-pill:active { transform: scale(0.96); }
 .arcLibraries-pill:focus-visible { outline: 2px solid var(--arc-text); outline-offset: 2px; }
 
+/* ------------------------------------------------------- movie and show pages
+ *
+ * Built with native/arcDetail.js: a full-screen hero (backdrop, logo, details,
+ * genres, overview, Play and round buttons) with "More like this" or a season picker
+ * and episodes along its bottom. jellyfin-web's own top part of the page is hidden;
+ * its sections below (cast, extras, ...) stay.
+ */
+
+/* Until arcDetail.js knows the item type, keep jellyfin-web's header part from flashing. */
+.itemDetailPage.arc-detail-pending > .itemBackdrop,
+.itemDetailPage.arc-detail-pending > .detailLogo,
+.itemDetailPage.arc-detail-pending .detailPageWrapperContainer { visibility: hidden; }
+
+.itemDetailPage.arc-detail-page > .itemBackdrop,
+.itemDetailPage.arc-detail-page > .detailLogo,
+.itemDetailPage.arc-detail-page .detailPagePrimaryContainer,
+.itemDetailPage.arc-detail-page .trackSelections,
+.itemDetailPage.arc-detail-page .recordingFields,
+.itemDetailPage.arc-detail-page .detailSectionContent,
+.itemDetailPage.arc-detail-page .itemDetailsGroup,
+.itemDetailPage.arc-detail-page .nextUpSection,
+.itemDetailPage.arc-detail-page #listChildrenCollapsible,
+.itemDetailPage.arc-detail-page #childrenCollapsible,
+.itemDetailPage.arc-detail-page #similarCollapsible { display: none !important; }
+
+/* The server's remaining sections (cast, extras, ...) line up with the hero's rows:
+   jellyfin-web indents .detailPageContent past the (now hidden) poster column and paints
+   its container dark grey, which showed as a band under the hero. */
+.itemDetailPage.arc-detail-page .detailPageWrapperContainer { margin: 0 !important; padding: 0 !important; }
+.itemDetailPage.arc-detail-page .detailPageSecondaryContainer { background: var(--arc-bg) !important; }
+.itemDetailPage.arc-detail-page .detailPageContent { padding: 1.6em 0 0 3.3vw !important; margin: 0 !important; }
+.itemDetailPage.arc-detail-page .detailPagePrimaryContent { padding: 0 !important; margin: 0 !important; }
+.itemDetailPage.arc-detail-page .detailVerticalSection .sectionTitle {
+    font-size: clamp(1.25rem, 1.45vw, 1.75rem);
+    font-weight: 700;
+}
+
+.arcDetail {
+    --arc-row-gap: clamp(12px, 1.15vw, 22px);
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    box-sizing: border-box;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 6.5rem 0 clamp(18px, 3vh, 38px);
+    color: var(--arc-text);
+    background: var(--arc-bg);
+}
+.arcDetail-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background-color: var(--arc-surface);
+    background-size: cover;
+    background-position: center 20%;
+    background-repeat: no-repeat;
+}
+.arcDetail-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.45) 42%, rgba(0, 0, 0, 0) 70%),
+        linear-gradient(0deg, var(--arc-bg) 0%, rgba(0, 0, 0, 0.6) 26%, rgba(0, 0, 0, 0) 50%),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 16%);
+}
+
+.arcDetail-info {
+    padding: 0 5vw;
+    max-width: min(1160px, 64vw);
+    margin-bottom: clamp(26px, 5vh, 64px);
+    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.6);
+}
+.arcDetail-logo {
+    display: block;
+    max-width: min(640px, 36vw);
+    max-height: clamp(110px, 21vh, 240px);
+    object-fit: contain;
+    object-position: left bottom;
+    margin-bottom: clamp(18px, 3.2vh, 36px);
+    filter: drop-shadow(0 4px 24px rgba(0, 0, 0, 0.5));
+}
+.arcDetail-title {
+    font: 800 clamp(2.8rem, 5vw, 5.2rem)/1 var(--arc-font);
+    letter-spacing: -0.035em;
+    color: var(--arc-text);
+    margin: 0 0 0.35em;
+}
+.arcDetail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5em 1.55em;
+    font-size: clamp(1.05rem, 1.15vw, 1.4rem);
+    font-weight: 600;
+    margin-bottom: 0.75em;
+}
+.arcDetail-star { color: #f5c518; margin-right: 0.3em; }
+.arcDetail-badge {
+    background: var(--arc-text);
+    color: var(--arc-on-accent);
+    font-size: 0.7em;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    padding: 0.18em 0.5em;
+    border-radius: 5px;
+    text-shadow: none;
+}
+.arcDetail-genres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em 1.4em;
+    font-size: clamp(1rem, 1.05vw, 1.25rem);
+    font-weight: 500;
+    color: rgba(245, 245, 247, 0.9);
+    margin-bottom: 1.1em;
+}
+.arcDetail-overview {
+    font-size: clamp(1rem, 1.1vw, 1.3rem);
+    line-height: 1.5;
+    max-width: 50em;
+    color: rgba(245, 245, 247, 0.92);
+    margin: 0 0 1.55em;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.arcDetail-actions,
+.arcDetail-actions.itemsContainer {
+    /* jellyfin-web adds .itemsContainer (display: flex; margin: 0 auto) on upgrade. */
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 1em;
+    margin: 0;
+}
+.arcDetail-action { display: contents; }
+.arcDetail-play,
+.arcDetail-round {
+    --arc-button-size: clamp(50px, 5.6vh, 62px);
+    height: var(--arc-button-size);
+    border: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: none;
+    transition: transform 0.12s var(--arc-ease), background-color 0.2s var(--arc-ease), color 0.2s var(--arc-ease);
+}
+.arcDetail-play {
+    gap: 0.45em;
+    padding: 0 1.8em 0 1.45em;
+    border-radius: 16px;
+    background: var(--arc-accent);
+    color: var(--arc-on-accent);
+    font: 700 clamp(1.05rem, 1.1vw, 1.35rem)/1 var(--arc-font);
+    letter-spacing: -0.01em;
+}
+.arcDetail-play:hover { background: #fff; }
+.arcDetail-play .material-icons { font-size: 1.55em; }
+.arcDetail-round {
+    width: var(--arc-button-size);
+    padding: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    color: var(--arc-text);
+    -webkit-backdrop-filter: var(--arc-blur);
+    backdrop-filter: var(--arc-blur);
+}
+.arcDetail-round:hover { background: rgba(255, 255, 255, 0.28); }
+.arcDetail-round .material-icons { font-size: 1.65rem; }
+/* Watched: a solid white button once the item is marked played. */
+.arcDetail-watched.playstatebutton-played,
+.arcDetail-watched[data-played="true"] { background: var(--arc-accent); color: var(--arc-on-accent); }
+.arcDetail-play:active,
+.arcDetail-round:active { transform: scale(0.95); }
+.arcDetail-play:focus-visible,
+.arcDetail-round:focus-visible { outline: 2px solid var(--arc-text); outline-offset: 3px; }
+
+.arcDetail-bottom { padding: 0 3.3vw; }
+.arcDetail-rowTitle {
+    font: 700 clamp(1.25rem, 1.45vw, 1.75rem)/1.2 var(--arc-font);
+    letter-spacing: -0.02em;
+    color: var(--arc-text);
+    margin: 0 0 0.65em 0.1em;
+}
+.arcDetail-seasons {
+    display: flex;
+    gap: 0.3em;
+    margin: 0 0 0.85em;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.arcDetail-season {
+    border: 0;
+    background: transparent;
+    color: rgba(245, 245, 247, 0.62);
+    font: 600 clamp(1rem, 1vw, 1.2rem)/1 var(--arc-font);
+    padding: 0.6em 1.15em;
+    border-radius: 999px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.2s var(--arc-ease), background-color 0.2s var(--arc-ease);
+}
+.arcDetail-season:hover { color: var(--arc-text); }
+.arcDetail-season.is-active {
+    background: rgba(255, 255, 255, 0.18);
+    color: var(--arc-text);
+    -webkit-backdrop-filter: var(--arc-blur);
+    backdrop-filter: var(--arc-blur);
+}
+
+.arcDetail-row { position: relative; }
+.arcDetail-scroller,
+.arcDetail-scroller.itemsContainer {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: var(--arc-row-gap);
+    margin: 0;
+    padding: 6px 2px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+}
+.arcDetail-scroller::-webkit-scrollbar { display: none; }
+.arcDetail-card {
+    flex: 0 0 calc((100% - 4 * var(--arc-row-gap)) / 5);
+    min-width: 220px;
+    border: 0;
+    background: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    color: var(--arc-text);
+    font-family: var(--arc-font);
+    cursor: pointer;
+    scroll-snap-align: start;
+}
+.arcDetail-row-episodes .arcDetail-card { flex-basis: calc((100% - 5 * var(--arc-row-gap)) / 6); }
+.arcDetail-cardArt {
+    display: block;
+    position: relative;
+    aspect-ratio: 16 / 9;
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--arc-surface-2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    transition: transform 0.3s var(--arc-ease);
+}
+.arcDetail-cardArt img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.arcDetail-cardArt .arcDetail-cardLogo {
+    position: absolute;
+    left: 15%;
+    top: 18%;
+    width: 70%;
+    height: 64%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.6));
+}
+.arcDetail-card:hover .arcDetail-cardArt { transform: scale(1.03); }
+.arcDetail-card:focus-visible { outline: none; }
+.arcDetail-card:focus-visible .arcDetail-cardArt { box-shadow: 0 0 0 3px var(--arc-text); }
+.arcDetail-cardTitle {
+    display: block;
+    margin-top: 0.7em;
+    font-size: clamp(0.95rem, 0.95vw, 1.15rem);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.arcDetail-cardSub {
+    display: block;
+    margin-top: 0.25em;
+    font-size: clamp(0.82rem, 0.8vw, 0.98rem);
+    color: var(--arc-text-2);
+}
+.arcDetail-row-similar .arcDetail-cardTitle,
+.arcDetail-row-similar .arcDetail-cardSub { text-align: center; }
+.arcDetail-cardArt .arcDetail-tick {
+    position: absolute;
+    right: 0.6em;
+    top: 0.6em;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.6);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+.arcDetail-progress {
+    position: absolute;
+    left: 0.75em;
+    right: 0.75em;
+    bottom: 0.65em;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.3);
+    overflow: hidden;
+}
+.arcDetail-progress > span { display: block; height: 100%; background: var(--arc-text); }
+
+/* Arrows in the page gutter beside a row, shown while the pointer is over it. */
+.arcDetail-arrow {
+    position: absolute;
+    z-index: 1;
+    top: 6px;
+    bottom: 3.6em;
+    width: 3.3vw;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--arc-text);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s var(--arc-ease);
+}
+.arcDetail-arrow .material-icons { font-size: 2.2rem; filter: drop-shadow(0 1px 6px rgba(0, 0, 0, 0.6)); }
+.arcDetail-arrow-prev { left: -3.3vw; }
+.arcDetail-arrow-next { right: -3.3vw; }
+.arcDetail-row:hover .arcDetail-arrow,
+.arcDetail-arrow:focus-visible { opacity: 1; }
+.arcDetail-arrow.is-hidden { visibility: hidden; }
+
+/* Header on these pages: no Home button; Home and the libraries as a pill in the
+   middle; search and the profile picture in a pill on the right. */
+.arc-on-detail .headerHomeButton { display: none !important; }
+.arcPageNav,
+.arcPageNav.itemsContainer {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    display: flex;
+    gap: 4px;
+    margin: 0;
+    padding: 5px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    -webkit-backdrop-filter: var(--arc-blur);
+    backdrop-filter: var(--arc-blur);
+}
+:root:not(.arc-on-detail) .arcPageNav { display: none !important; }
+.arcPageNav-tab {
+    border: 0;
+    background: transparent;
+    color: rgba(245, 245, 247, 0.82);
+    font: 600 0.95rem/1 var(--arc-font);
+    letter-spacing: -0.01em;
+    padding: 0.6em 1.25em;
+    border-radius: 999px;
+    cursor: pointer;
+    text-shadow: none;
+    transition: color 0.2s var(--arc-ease), background-color 0.2s var(--arc-ease);
+}
+.arcPageNav-tab:hover { color: var(--arc-text); }
+.arcPageNav-tab.is-active { background: var(--arc-text); color: var(--arc-on-accent); }
+.arc-on-detail .skinHeader .headerRight {
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    -webkit-backdrop-filter: var(--arc-blur);
+    backdrop-filter: var(--arc-blur);
+    padding: 0 0.3em;
+}
+
 @media (max-width: 700px) {
     .arcHero-content { width: auto; right: 24px; }
     .arcHero-overview { display: none; }
+    .arcDetail-info { max-width: none; }
+    .arcDetail-logo { max-width: 70vw; }
+    .arcPageNav { display: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .arcHero-slide,
-    .cardScalable { transition: opacity 0.2s linear; transform: none !important; }
+    .cardScalable,
+    .arcDetail-cardArt { transition: opacity 0.2s linear; transform: none !important; }
 }

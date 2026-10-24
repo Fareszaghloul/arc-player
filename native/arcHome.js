@@ -276,9 +276,10 @@
     }
 
     // Over the hero, the header turns into a soft gradient; past it, the usual
-    // translucent bar returns.
+    // translucent bar returns. The movie and show pages (native/arcDetail.js) have a
+    // hero too and call this through window.ArcHome.updateHeader.
     function updateHeader() {
-        const hero = document.querySelector('.homePage:not(.hide) .arcHero');
+        const hero = document.querySelector('.homePage:not(.hide) .arcHero, .itemDetailPage:not(.hide) .arcDetail');
         const header = document.querySelector('.skinHeader');
         let over = false;
         if (hero && hero.isConnected && header && themeOn()) {
@@ -461,6 +462,8 @@
     } else {
         document.addEventListener('DOMContentLoaded', startObserving, { once: true });
     }
+
+    window.ArcHome = { updateHeader, createActionHost };
 
     window.addEventListener('scroll', updateHeader, { passive: true });
     window.addEventListener('resize', () => {
