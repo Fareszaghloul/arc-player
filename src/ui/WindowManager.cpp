@@ -19,6 +19,29 @@
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#include <dwmapi.h>
+
+#ifndef DWMWA_BORDER_COLOR
+#define DWMWA_BORDER_COLOR 34
+#endif
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// main.cpp gives fullscreen windows a 1px border so screen sharing keeps capturing them (see
+// setHasBorderInFullScreenDefault there). Qt keeps the window the size of the monitor, so the
+// border sits just inside the screen edge, and Windows 11 draws it as a light outline. Paint it
+// black while fullscreen and hand it back to the system colour afterwards. Older Windows ignore
+// the attribute.
+static void setFullScreenBorderColor(QWindow* window, bool fullScreen)
+{
+  const COLORREF black = RGB(0, 0, 0);
+  const COLORREF systemDefault = 0xFFFFFFFF; // DWMWA_COLOR_DEFAULT
+  const COLORREF color = fullScreen ? black : systemDefault;
+  DwmSetWindowAttribute(reinterpret_cast<HWND>(window->winId()), DWMWA_BORDER_COLOR, &color, sizeof(color));
+}
+#endif
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 WindowManager& WindowManager::Get()
@@ -328,6 +351,11 @@ void WindowManager::onVisibilityChanged(QWindow::Visibility visibility)
 
   bool isFS = (visibility == QWindow::FullScreen);
   bool wasFS = (m_previousVisibility == QWindow::FullScreen);
+
+#ifdef Q_OS_WIN
+  if (m_window && visibility != QWindow::Hidden)
+    setFullScreenBorderColor(m_window, isFS);
+#endif
 
   // Kiosk mode: force back to fullscreen if user tried to exit
   if (!isFS)
