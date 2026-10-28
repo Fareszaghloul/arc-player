@@ -227,6 +227,13 @@ if(LINUX_DBUS)
   target_link_libraries(jmp_core Qt6::DBus)
 endif()
 
+# main.cpp sets Qt's Windows "border in fullscreen" default (a private native interface)
+# so fullscreen stays capturable by screen sharing.
+if(WIN32)
+  find_package(Qt6 REQUIRED COMPONENTS GuiPrivate)
+  target_link_libraries(jmp_core Qt6::GuiPrivate)
+endif()
+
 # Delay-load libmpv on Windows for runtime AVX2 fallback
 if(WIN32)
   target_link_libraries(jmp_core delayimp.lib)

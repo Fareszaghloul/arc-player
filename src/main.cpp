@@ -38,6 +38,10 @@
 #include "SignalManager.h"
 #endif
 
+#if defined(Q_OS_WIN)
+#include <QtGui/private/qguiapplication_p.h> // QNativeInterface::Private::QWindowsApplication
+#endif
+
 #if defined(Q_OS_WIN) && defined(_M_X64)
 #include <windows.h>
 #include <cstdio>
@@ -441,9 +445,17 @@ int main(int argc, char *argv[])
     QtWebEngineQuick::initialize();
     QApplication app(newArgc, newArgv);
 
-#if defined(Q_OS_WIN) 
+#if defined(Q_OS_WIN)
     // Setting window icon on OSX will break user ability to change it
     app.setWindowIcon(QIcon(":/images/icon.png"));
+
+    // A borderless OpenGL window that exactly covers a monitor is taken out of desktop
+    // composition by Windows (it is presented straight to the screen). It looks fine
+    // locally, but screen sharing and recording (Discord, OBS, Teams, ...) then capture
+    // flickering or stale frames. Giving fullscreen windows a border keeps them composed;
+    // Qt places that border just outside the monitor, so nothing visible changes.
+    if (auto* windowsApp = app.nativeInterface<QNativeInterface::Private::QWindowsApplication>())
+      windowsApp->setHasBorderInFullScreenDefault(true);
 #endif
 
 #if defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
