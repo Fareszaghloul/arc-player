@@ -4,7 +4,9 @@
 #include <QDebug>
 #include <QDesktopServices>
 #include <QDir>
+#include <QFileInfo>
 #include <QHostAddress>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QNetworkReply>
@@ -51,6 +53,13 @@ void UpdaterComponent::componentPostInitialize()
   });
 
   connect(qApp, &QCoreApplication::aboutToQuit, this, &UpdaterComponent::onAboutToQuit);
+
+  // Running the version a patch was launched for: the patch worked.
+  if (lastPatchAttempt() == currentVersion())
+  {
+    qInfo() << "Updater: the patch to" << currentVersion() << "applied";
+    setLastPatchAttempt(QString());
+  }
 
 #ifndef DISABLE_UPDATE_CHECK
   // Check on every launch, independent of which page is showing.
@@ -275,6 +284,38 @@ void UpdaterComponent::onFeedFinished(QNetworkReply* reply)
     return;
   }
 
+  // A patch built against this version is a few MB instead of the whole installer.
+  // One that was launched for this release before and did not leave Arc updated is
+  // skipped, so a broken patch cannot keep Arc from updating.
+  QString attempted = lastPatchAttempt();
+  if (!attempted.isEmpty() && attempted != version)
+  {
+    setLastPatchAttempt(QString()); // left over from an older release
+    attempted.clear();
+  }
+  QJsonObject patch;
+  if (attempted == version)
+  {
+    qInfo() << "Updater: the patch to" << version << "did not apply last time; using the full installer";
+  }
+  else
+  {
+    for (const QJsonValue& value : entry.value("patches").toArray())
+    {
+      QJsonObject candidate = value.toObject();
+      if (candidate.value("from").toString().trimmed() != currentVersion())
+        continue;
+      QUrl patchUrl(candidate.value("url").toString());
+      QString patchSha = candidate.value("sha256").toString().trimmed().toLower();
+      if (isAllowedUrl(patchUrl) && sha256Pattern.match(patchSha).hasMatch())
+      {
+        patch = candidate;
+        break;
+      }
+      qWarning() << "Updater: ignoring an invalid patch from" << currentVersion();
+    }
+  }
+
   // A forced re-check that finds the same version keeps the download in progress.
   bool sameUpdate = m_result == Result::Available && m_update.value("version").toString() == version;
 
@@ -284,9 +325,24 @@ void UpdaterComponent::onFeedFinished(QNetworkReply* reply)
   m_update.insert("notes", feed.value("notes").toString());
   m_update.insert("released", feed.value("released").toString());
   m_update.insert("platform", key);
-  m_update.insert("url", downloadUrl.toString());
-  m_update.insert("sha256", sha256);
-  m_update.insert("size", entry.value("size").toVariant());
+  m_update.insert("fullUrl", downloadUrl.toString());
+  m_update.insert("fullSha256", sha256);
+  m_update.insert("fullSize", entry.value("size").toVariant());
+  if (patch.isEmpty())
+  {
+    m_update.insert("patch", false);
+    m_update.insert("url", downloadUrl.toString());
+    m_update.insert("sha256", sha256);
+    m_update.insert("size", entry.value("size").toVariant());
+  }
+  else
+  {
+    m_update.insert("patch", true);
+    m_update.insert("url", patch.value("url").toString());
+    m_update.insert("sha256", patch.value("sha256").toString().trimmed().toLower());
+    m_update.insert("size", patch.value("size").toVariant());
+    downloadUrl = QUrl(patch.value("url").toString());
+  }
 #ifdef Q_OS_WIN
   m_update.insert("canInstall", true);
 #else
@@ -294,7 +350,8 @@ void UpdaterComponent::onFeedFinished(QNetworkReply* reply)
 #endif
   m_update.insert("automatic", autoUpdateEnabled());
 
-  qInfo() << "Updater: version" << version << "available for" << key << "from" << downloadUrl.toString();
+  qInfo() << "Updater: version" << version << "available for" << key << "from" << downloadUrl.toString()
+          << (patch.isEmpty() ? "(full installer)" : "(patch)") << m_update.value("size").toLongLong() << "bytes";
   m_result = Result::Available;
   if (!sameUpdate)
     m_phase = "available";
@@ -318,6 +375,55 @@ void UpdaterComponent::failInstall(const QString& message)
   m_phase = "error";
   m_resultMessage = message;
   emit updateError(message);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// A patch that could not be downloaded or verified: switch to the full installer.
+bool UpdaterComponent::retryWithFullInstaller(const QString& reason)
+{
+  if (!m_update.value("patch").toBool())
+    return false;
+
+  qWarning() << "Updater:" << reason << "- downloading the full installer instead of the patch";
+  if (m_download.isOpen())
+    m_download.close();
+  if (!m_download.fileName().isEmpty())
+    m_download.remove();
+  m_update.insert("patch", false);
+  m_update.insert("url", m_update.value("fullUrl"));
+  m_update.insert("sha256", m_update.value("fullSha256"));
+  m_update.insert("size", m_update.value("fullSize"));
+  startDownload(m_automatic);
+  return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+QString UpdaterComponent::patchAttemptFile()
+{
+  return QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/arc-update/patch-attempt.txt";
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+QString UpdaterComponent::lastPatchAttempt()
+{
+  QFile file(patchAttemptFile());
+  if (!file.open(QIODevice::ReadOnly))
+    return QString();
+  return QString::fromUtf8(file.readAll()).trimmed();
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void UpdaterComponent::setLastPatchAttempt(const QString& version)
+{
+  QFile file(patchAttemptFile());
+  if (version.isEmpty())
+  {
+    file.remove();
+    return;
+  }
+  QDir().mkpath(QFileInfo(file).absolutePath());
+  if (file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+    file.write(version.toUtf8());
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -433,6 +539,7 @@ void UpdaterComponent::onDownloadFinished()
   if (!reply)
     return;
   reply->deleteLater();
+  m_downloadReply = nullptr; // so a fallback download can start right away
 
   // Collect anything left after the last readyRead.
   QByteArray rest = reply->readAll();
@@ -450,7 +557,9 @@ void UpdaterComponent::onDownloadFinished()
   }
   if (reply->error() != QNetworkReply::NoError)
   {
-    failInstall(QString("The download failed: %1").arg(reply->errorString()));
+    QString message = QString("The download failed: %1").arg(reply->errorString());
+    if (!retryWithFullInstaller(message))
+      failInstall(message);
     return;
   }
   m_download.close();
@@ -459,8 +568,10 @@ void UpdaterComponent::onDownloadFinished()
   QString expected = m_update.value("sha256").toString();
   if (actual != expected)
   {
-    failInstall(QString("The download did not match its published checksum, so it was discarded "
-                        "(expected %1, got %2)").arg(expected, actual));
+    QString message = QString("The download did not match its published checksum, so it was discarded "
+                              "(expected %1, got %2)").arg(expected, actual);
+    if (!retryWithFullInstaller(message))
+      failInstall(message);
     return;
   }
 
@@ -468,7 +579,9 @@ void UpdaterComponent::onDownloadFinished()
   qint64 expectedSize = m_update.value("size").toLongLong(&sizeOk);
   if (sizeOk && expectedSize > 0 && m_download.size() != expectedSize)
   {
-    failInstall(QString("The download is %1 bytes but the feed says %2").arg(m_download.size()).arg(expectedSize));
+    QString message = QString("The download is %1 bytes but the feed says %2").arg(m_download.size()).arg(expectedSize);
+    if (!retryWithFullInstaller(message))
+      failInstall(message);
     return;
   }
 
@@ -505,6 +618,10 @@ void UpdaterComponent::launchInstaller(bool relaunchAndQuit)
   QStringList args = { "/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART" };
   if (!relaunchAndQuit)
     args << "/NoRelaunch=1"; // Arc is already closing; the user chose to quit, so stay closed
+
+  // Remember a patch launch: if Arc is not on the new version next time, the patch did
+  // not apply and the full installer is used instead.
+  setLastPatchAttempt(m_update.value("patch").toBool() ? version : QString());
 
   qInfo() << "Updater: starting installer" << m_readyInstaller << args;
   if (!QProcess::startDetached(m_readyInstaller, args))

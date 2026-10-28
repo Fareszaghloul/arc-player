@@ -23,9 +23,22 @@ class QNetworkReply;
 //     "released": "2026-10-23",
 //     "notes": "What changed",
 //     "platforms": {
-//       "windows-x64": { "url": "https://.../Arc-0.2.0-x64.exe", "sha256": "<64 hex>", "size": 123 }
+//       "windows-x64": {
+//         "url": "https://.../Arc-0.2.0-x64.exe", "sha256": "<64 hex>", "size": 123,
+//         "patches": [
+//           { "from": "0.1.9", "url": "https://.../Arc-0.2.0-patch-from-0.1.9-x64.exe",
+//             "sha256": "<64 hex>", "size": 45 }
+//         ]
+//       }
 //     }
 //   }
+//
+// Patches: an installer holding only the files that changed since one earlier version.
+// Arc uses the patch whose "from" is its own version, and the full installer otherwise.
+// If the patch download fails or does not verify, it switches to the full installer
+// right away. A patch that was launched but did not leave Arc on the new version (its
+// installer refuses to run on anything but the "from" version) is remembered, and the
+// next attempt for that version uses the full installer.
 //
 // Automatic updates (main.autoUpdate, on by default): a few seconds after launch the
 // feed is checked; a newer version is downloaded in the background and its SHA-256
@@ -83,6 +96,12 @@ private:
   void onFeedFinished(QNetworkReply* reply);
   void onDownloadFinished();
   void failInstall(const QString& message);
+  bool retryWithFullInstaller(const QString& reason);
+
+  // Patch bookkeeping: the version a patch installer was last launched for.
+  static QString patchAttemptFile();
+  static QString lastPatchAttempt();
+  static void setLastPatchAttempt(const QString& version);
   void installWhenIdle();
   void launchInstaller(bool relaunchAndQuit);
   void onAboutToQuit();

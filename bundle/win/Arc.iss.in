@@ -10,8 +10,17 @@
 #define MyAppPublisher "Arc"
 #define MyAppURL "https://arc.local"
 #define MyAppExeName "Arc.exe"
-#define MyAppGUID "{{dd822ab1-0ded-48d0-9194-c13224db5d59}"
+; Overridable (/DMyAppGUID=...) so installer tests can use a throwaway app identity.
+#ifndef MyAppGUID
+  #define MyAppGUID "{{dd822ab1-0ded-48d0-9194-c13224db5d59}"
+#endif
 #define DeployPath "@CMAKE_INSTALL_PREFIX@"
+
+; Patch installers: dev/windows/publish-update.ps1 also compiles this script with
+;   /DPatchFrom=<version> /DPatchFiles=<generated .iss>
+; The generated file lists only the files that changed since <version> ([Files]) and
+; the ones it no longer ships ([InstallDelete]). A patch installer installs only over
+; an existing install of exactly <version> and refuses to run otherwise.
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -58,6 +67,9 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
+#ifdef PatchFiles
+#include PatchFiles
+#else
 [Files]
 ; Main application files (exclude redist folder - handled separately)
 Source: "{#DeployPath}/*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "redist,redist/*,vc_redist.x64.exe"
@@ -65,6 +77,7 @@ Source: "{#DeployPath}/*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 Source: "{#DeployPath}/redist/*.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: NeedsBundledRuntime
 ; Bundled VCRedist installer - extracted to temp for potential system-wide install
 Source: "{#DeployPath}/vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall; Check: ShouldExtractVCRedist
+#endif
 
 [Icons]
 Name: "{autoprograms}\Arc"; Filename: "{app}\{#MyAppExeName}"; Comment: "Arc media client"; WorkingDir: "{app}"
@@ -114,12 +127,52 @@ begin
   Result := InstallVCRedist;
 end;
 
+#ifdef PatchFrom
+// The version of the install this setup would patch, from its uninstall entry in the
+// registry root of the current install mode (per-user or per-machine).
+function InstalledVersion: String;
+var
+  Key: String;
+begin
+  Key := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\' + ExpandConstant('{#SetupSetting("AppId")}') + '_is1';
+  if not RegQueryStringValue(HKA, Key, 'DisplayVersion', Result) then
+    Result := '';
+end;
+
+// Reopen the installed Arc after refusing to patch it, so an in-app update that ends
+// here does not leave Arc closed. Its updater then falls back to the full installer.
+procedure RelaunchInstalledArc;
+var
+  Key, Dir: String;
+  Code: Integer;
+begin
+  if not WizardSilent or (ExpandConstant('{param:NoRelaunch|0}') <> '0') then
+    Exit;
+  Key := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\' + ExpandConstant('{#SetupSetting("AppId")}') + '_is1';
+  if RegQueryStringValue(HKA, Key, 'InstallLocation', Dir) and FileExists(AddBackslash(Dir) + '{#MyAppExeName}') then
+    Exec(AddBackslash(Dir) + '{#MyAppExeName}', '', Dir, SW_SHOWNORMAL, ewNoWait, Code);
+end;
+#endif
+
 function InitializeSetup(): Boolean;
 begin
   Result := True;
-  VCRedistNeeded := not HasSystemVCRuntime;
   InstallVCRedist := False;
   UseBundledRuntime := False;
+#ifdef PatchFrom
+  // The runtime came with the install being patched; a patch never touches it.
+  VCRedistNeeded := False;
+  if InstalledVersion <> '{#PatchFrom}' then
+  begin
+    Log('Patch for {#PatchFrom} refused: installed version is "' + InstalledVersion + '"');
+    if not WizardSilent then
+      MsgBox('This update only applies to Arc {#PatchFrom}. Download the full Arc {#MyAppVersion} installer instead.', mbError, MB_OK);
+    RelaunchInstalledArc;
+    Result := False;
+  end;
+#else
+  VCRedistNeeded := not HasSystemVCRuntime;
+#endif
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
