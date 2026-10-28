@@ -126,14 +126,22 @@ if (-not $NoPatch) {
         Write-Host "No previous file list given (-PreviousManifest); publishing without a patch."
     } elseif ($PreviousManifest -match '^https?://') {
         try {
-            $previous = Invoke-WebRequest -Uri $PreviousManifest -UseBasicParsing | Select-Object -ExpandProperty Content
-            if ($previous -is [byte[]]) { $previous = [System.Text.Encoding]::UTF8.GetString($previous) }
-            $previous = $previous | ConvertFrom-Json
+            # GitHub serves release assets as application/octet-stream, so Content is a
+            # byte[]; read it off the response object (piping it would unroll the bytes).
+            $response = Invoke-WebRequest -Uri $PreviousManifest -UseBasicParsing
+            $content = $response.Content
+            if ($content -is [byte[]]) { $content = [System.Text.Encoding]::UTF8.GetString($content) }
+            $previous = $content | ConvertFrom-Json
         } catch {
             Write-Host "Could not read the previous file list ($PreviousManifest): $($_.Exception.Message); publishing without a patch."
         }
     } else {
         $previous = Get-Content $PreviousManifest -Raw | ConvertFrom-Json
+    }
+
+    if ($previous -and -not ($previous.version -and $previous.files)) {
+        Write-Host "The previous file list ($PreviousManifest) has no version or files; publishing without a patch."
+        $previous = $null
     }
 
     if ($previous) {
