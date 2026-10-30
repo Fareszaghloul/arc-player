@@ -409,6 +409,10 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
 .videoOsdBottom .btnRecord,
 .videoOsdBottom .endsAtText { display: none !important; }
 
+/* jellyfin-web's volume / brightness popup in the top-right corner, shown for a few
+   seconds on every change. The floating volume slider already shows the level. */
+.iconOsd { display: none !important; }
+
 /* Even spacing across the control row. Previous / play / next sit in a plain wrapper
    <div dir="ltr"> whose inline buttons were only separated by whitespace, so it gets
    the same flex layout and gap as the row itself. */
