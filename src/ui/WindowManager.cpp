@@ -21,24 +21,67 @@
 
 #ifdef Q_OS_WIN
 #include <windows.h>
-#include <dwmapi.h>
-
-#ifndef DWMWA_BORDER_COLOR
-#define DWMWA_BORDER_COLOR 34
-#endif
+#include <QAbstractNativeEventFilter>
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // main.cpp gives fullscreen windows a 1px border so screen sharing keeps capturing them (see
-// setHasBorderInFullScreenDefault there). Qt keeps the window the size of the monitor, so the
-// border sits just inside the screen edge, and Windows 11 draws it as a light outline. Paint it
-// black while fullscreen and hand it back to the system colour afterwards. Older Windows ignore
-// the attribute.
-static void setFullScreenBorderColor(QWindow* window, bool fullScreen)
+// setHasBorderInFullScreenDefault there). Qt keeps the window the size of the monitor, so that
+// border sits on the outermost pixels of the screen, where Windows paints it grey (#646464) as a
+// classic thin frame: the DWM border colour does not apply to it. While Arc is fullscreen this
+// filter paints that frame black instead, so it blends with the black UI and the screen bezel.
+class FullScreenBorderPainter : public QAbstractNativeEventFilter
 {
-  const COLORREF black = RGB(0, 0, 0);
-  const COLORREF systemDefault = 0xFFFFFFFF; // DWMWA_COLOR_DEFAULT
-  const COLORREF color = fullScreen ? black : systemDefault;
-  DwmSetWindowAttribute(reinterpret_cast<HWND>(window->winId()), DWMWA_BORDER_COLOR, &color, sizeof(color));
+public:
+  HWND fullScreenWindow = nullptr;
+
+  static void paint(HWND hwnd)
+  {
+    HDC dc = GetWindowDC(hwnd);
+    if (!dc)
+      return;
+    RECT rect;
+    GetWindowRect(hwnd, &rect);
+    OffsetRect(&rect, -rect.left, -rect.top);
+    FrameRect(dc, &rect, static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
+    ReleaseDC(hwnd, dc);
+  }
+
+  bool nativeEventFilter(const QByteArray& eventType, void* message, qintptr* result) override
+  {
+    if (!fullScreenWindow || eventType != "windows_generic_MSG")
+      return false;
+    MSG* msg = static_cast<MSG*>(message);
+    if (msg->hwnd != fullScreenWindow)
+      return false;
+    if (msg->message == WM_NCPAINT)
+    {
+      paint(msg->hwnd);
+      *result = 0;
+      return true;
+    }
+    if (msg->message == WM_NCACTIVATE)
+    {
+      // Windows repaints the frame in its active/inactive colour here.
+      paint(msg->hwnd);
+      *result = TRUE;
+      return true;
+    }
+    return false;
+  }
+};
+
+static void setFullScreenBorder(QWindow* window, bool fullScreen)
+{
+  static FullScreenBorderPainter* painter = []()
+  {
+    auto* filter = new FullScreenBorderPainter;
+    qApp->installNativeEventFilter(filter);
+    return filter;
+  }();
+
+  HWND hwnd = reinterpret_cast<HWND>(window->winId());
+  painter->fullScreenWindow = fullScreen ? hwnd : nullptr;
+  RedrawWindow(hwnd, nullptr, nullptr, RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW);
 }
 #endif
 
@@ -354,7 +397,7 @@ void WindowManager::onVisibilityChanged(QWindow::Visibility visibility)
 
 #ifdef Q_OS_WIN
   if (m_window && visibility != QWindow::Hidden)
-    setFullScreenBorderColor(m_window, isFS);
+    setFullScreenBorder(m_window, isFS);
 #endif
 
   // Kiosk mode: force back to fullscreen if user tried to exit

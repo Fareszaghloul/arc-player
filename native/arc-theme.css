@@ -418,30 +418,41 @@ progress::-webkit-progress-value { background-color: var(--arc-accent); }
 .videoOsdBottom .buttons .paper-icon-button-light,
 .videoOsdBottom .volumeButtons { margin: 0 !important; }
 
-/* Volume: the slider lives in space reserved between the volume icon and fullscreen,
-   so opening it never moves any icon. Closed, that space is empty; open, the slider wipes
-   in from the left (clip-path) and fades in. native/arcPlayer.js adds .arc-volume-open
-   when the pointer reaches the volume icon and keeps it while the pointer is over the
-   icon or the slider, or the slider is being dragged; keyboard focus (not a mouse
-   click's leftover focus) opens it too. The
-   clip reaches 7em above the track: the volume value floats about 5em above it and was
-   cut off with less. */
+/* Volume: the slider floats on a small glass pill above the volume icon instead of
+   taking room in the row, so the icons keep even gaps and nothing moves when it opens.
+   The pill clears the timeline row (it sat on the progress line and the time at 0.5em)
+   and is stacked above it, or a press on the pill would seek the video instead.
+   native/arcPlayer.js adds .arc-volume-open when the pointer reaches the volume icon and
+   keeps it while the pointer is over the icon, the pill or the space between them, or
+   the slider is being dragged; keyboard focus (not a mouse click's leftover focus)
+   opens it too. The volume value floats above the pill while dragging. */
+.videoOsdBottom .volumeButtons { position: relative; z-index: 10; }
 .videoOsdBottom .osdVolumeSliderContainer {
-    flex-grow: 0 !important;
-    flex-shrink: 0;
-    width: 8.5em !important;
-    margin-left: 0.35em;
+    position: absolute !important;
+    z-index: 10;
+    left: 50%;
+    bottom: calc(100% + 2.7em);
+    width: 9em !important;
+    flex: none !important;
+    margin: 0 !important;
+    padding: 0.8em 1.15em;
+    box-sizing: border-box;
+    border-radius: 999px;
+    background: rgba(28, 28, 30, 0.62);
+    -webkit-backdrop-filter: var(--arc-blur);
+    backdrop-filter: var(--arc-blur);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
     opacity: 0;
     pointer-events: none;
-    clip-path: inset(-7em 100% -1em 0);
-    transition: clip-path 0.34s cubic-bezier(0.32, 0.72, 0, 1),
-                opacity 0.24s var(--arc-ease);
+    transform: translate(-50%, 0.4em) scale(0.96);
+    transform-origin: 50% 100%;
+    transition: opacity 0.2s var(--arc-ease), transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
 }
 .videoOsdBottom .volumeButtons.arc-volume-open .osdVolumeSliderContainer,
 .videoOsdBottom .volumeButtons:has(:focus-visible) .osdVolumeSliderContainer {
     opacity: 1;
     pointer-events: auto;
-    clip-path: inset(-7em 0 -1em 0);
+    transform: translate(-50%, 0) scale(1);
 }
 
 /* Slider previews (the timeline timestamp while hovering or scrubbing, and the volume
